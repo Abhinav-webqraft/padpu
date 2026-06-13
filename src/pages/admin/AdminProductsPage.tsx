@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { products as initialProducts } from '../../data/mockData';
+import { products as initialProducts, categories as globalCategories } from '../../data/mockData';
 import type { Product } from '../../types';
-import { Plus, Edit2, Trash2, Package, X, Check, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package, X, Check, Search, Upload } from 'lucide-react';
 
-const CATEGORIES = ['Pure Honey', 'Forest Honey', 'Flavoured Honey', 'Gift Packs'];
 const WEIGHT_LABELS = ['250g', '500g', '1kg', '3×250g', '3×500g', 'Complete Set'];
 
 type WeightOption = { label: string; price: number; grams: number };
@@ -35,7 +34,7 @@ export default function AdminProductsPage() {
     p.category.toLowerCase().includes(search.toLowerCase())
   );
 
-  const openAdd = () => { setForm(BLANK); setEditing(null); setShowForm(true); };
+  const openAdd = () => { setForm({...BLANK, category: globalCategories[0] || 'Pure Honey'}); setEditing(null); setShowForm(true); };
   const openEdit = (p: Product) => {
     setForm({
       name: p.name, shortDescription: p.shortDescription,
@@ -215,7 +214,7 @@ export default function AdminProductsPage() {
                 <div>
                   <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Category *</label>
                   <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="input-dark w-full">
-                    {CATEGORIES.map(c => <option key={c} value={c} className="bg-[#0f170c]">{c}</option>)}
+                    {globalCategories.map(c => <option key={c} value={c} className="bg-[#0f170c]">{c}</option>)}
                   </select>
                 </div>
 
@@ -285,10 +284,44 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
 
-                {/* Image URL */}
+                {/* Image Upload */}
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Image URL (main)</label>
-                  <input type="text" value={form.images[0] || ''} onChange={e => setForm(p => ({ ...p, images: [e.target.value] }))} className="input-dark w-full" placeholder="/images/honey-jar.png" />
+                  <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Product Image *</label>
+                  <label 
+                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-2xl cursor-pointer hover:bg-white/5 hover:border-amber-500/50 transition-all relative overflow-hidden"
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                      e.preventDefault();
+                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                        setForm(p => ({ ...p, images: [URL.createObjectURL(e.dataTransfer.files[0])] }));
+                      }
+                    }}
+                  >
+                    {form.images[0] ? (
+                      <>
+                        <img src={form.images[0]} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                          <Upload className="w-8 h-8 text-white mb-2" />
+                          <span className="text-sm font-semibold text-white">Change Image</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-gray-500">
+                        <Upload className="w-8 h-8 mb-2" />
+                        <p className="text-sm font-medium">Click or drag image to upload</p>
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={e => {
+                        if (e.target.files && e.target.files[0]) {
+                          setForm(p => ({ ...p, images: [URL.createObjectURL(e.target.files[0])] }));
+                        }
+                      }}
+                    />
+                  </label>
                 </div>
               </div>
 

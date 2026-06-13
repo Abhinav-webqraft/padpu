@@ -46,6 +46,13 @@ const values = [
 ];
 
 export default function AboutPage() {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: heroScroll } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"]
+  });
+  const quoteOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
+
   const timelineRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: timelineRef,
@@ -55,7 +62,7 @@ export default function AboutPage() {
   });
 
   // Calculate the wave polyline points
-  const waves = 2; 
+  const waves = 2;
   // Desktop Wave (amplitude 3) - gently points to the cards
   const desktopWavePoints = Array.from({ length: 100 }).map((_, i) => {
     const t = i / 99;
@@ -64,27 +71,25 @@ export default function AboutPage() {
     return `${x},${y}`;
   }).join(" ");
 
-  // Mobile Wave (amplitude 6) - left aligned for single column layout
-  const mobileWaves = 4; // Exactly 4 waves to match the 4 cards (one peak per card)
-  const mobileWavePoints = Array.from({ length: 150 }).map((_, i) => {
+  // Mobile Wave (amplitude 6) - centered for alternating column layout
+  const mobileWaves = 4; // Exactly 4 waves to match the 4 cards
+  const mobileWavePoints = Array.from({ length: 130 }).map((_, i) => {
     const t = i / 149;
-    // Use + to make the wave swing right (towards the card) at the card centers (t=0.125, 0.375...)
-    // Amplitude 6 with base 10 means it swings from x=4 to x=16, perfectly touching the pl-16 card edge!
-    const x = 10 + Math.cos((t - 0.125) * Math.PI * 2 * mobileWaves) * 6;
-    const y = t * 105; // extend slightly past 100
+    const x = 50 + Math.cos((t - 0.155) * Math.PI * 2 * mobileWaves) * 6;
+    const y = t * 300; // extend slightly past 100
     return `${x},${y}`;
   }).join(" ");
 
   // Simple hard cut for progress reveal
   const clipPath = useTransform(
-    scrollYProgress, 
+    scrollYProgress,
     (v) => `inset(0 0 ${100 - (v * 100)}% 0)`
   );
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0f170c]">
       {/* Faded Background Image Layer */}
-      <div 
+      <div
         className="absolute inset-0 z-0 opacity-40 pointer-events-none"
         style={{
           background: 'url("/scenic-bg.jpeg") center/cover no-repeat fixed',
@@ -97,51 +102,48 @@ export default function AboutPage() {
       <div className="absolute top-[40%] right-[-10%] w-[600px] h-[600px] rounded-full bg-green-500/5 blur-[150px] pointer-events-none" />
       <div className="absolute bottom-[10%] left-[20%] w-[400px] h-[400px] rounded-full bg-amber-500/5 blur-[150px] pointer-events-none" />
 
-      {/* Cinematic Hero */}
-      <section className="relative min-h-[60vh] flex items-center overflow-hidden">
+      {/* Cinematic Hero Section */}
+      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center pt-32 pb-24 overflow-hidden">
         <PollenParticles count={15} />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 pt-32 text-center z-10">
-          <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest text-amber-500 border border-amber-500/20 bg-amber-500/10 uppercase mb-5 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
-          >
-            ✦ Our Story ✦
-          </motion.span>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="font-display font-bold text-white mb-5"
-            style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}
-          >
-            Born from Nature,<br />
-            <span className="amber-gradient-text">Built with Love</span>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-gray-400 font-light text-lg max-w-xl mx-auto"
-          >
-            A family farm in the Himalayan foothills, producing India's finest pure honey since 2010.
-          </motion.p>
-        </div>
+
+        {/* Intro Quote Card */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
+          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          style={{ opacity: quoteOpacity }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="relative max-w-4xl w-full text-center px-4 sm:px-6 lg:px-8 z-20"
+        >
+          <div className="glass p-10 md:p-14 border border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.15)]">
+            <p className="font-display text-xl md:text-3xl text-white leading-relaxed italic">
+              "Our mission is simple: to bring the purest, most delicious honey from our hives to your home —
+              with complete transparency, respect for nature, and love for our craft."
+            </p>
+            <p className="text-amber-500 font-semibold mt-6 md:text-lg">— Ramesh Padpu, Founder</p>
+          </div>
+        </motion.div>
       </section>
 
-      {/* Mission */}
-      <section className="py-16 relative z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <AnimatedSection>
-            <div className="glass p-10 md:p-14">
-              <p className="font-display text-xl md:text-2xl text-white leading-relaxed italic">
-                "Our mission is simple: to bring the purest, most delicious honey from our hives to your home — 
-                with complete transparency, respect for nature, and love for our craft."
-              </p>
-              <p className="text-amber-500 font-semibold mt-6">— Ramesh Padpu, Founder</p>
-            </div>
-          </AnimatedSection>
-        </div>
+      {/* Main Hero Text (Second Screen) */}
+      <section className="relative py-24 flex items-center justify-center overflow-hidden">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10"
+        >
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest text-amber-500 border border-amber-500/20 bg-amber-500/10 uppercase mb-5 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+            ✦ Our Story ✦
+          </span>
+          <h1 className="font-display font-bold text-white mb-5" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}>
+            Born from Nature,<br />
+            <span className="amber-gradient-text">Built with Love</span>
+          </h1>
+          <p className="text-gray-400 font-light text-lg max-w-xl mx-auto">
+            A family farm in the Himalayan foothills, producing India's finest pure honey since 2010.
+          </p>
+        </motion.div>
       </section>
 
       {/* Timeline */}
@@ -158,74 +160,74 @@ export default function AboutPage() {
             {/* Desktop Paths */}
             <div className="hidden sm:block absolute inset-0 z-0">
               {/* Faint Background Path */}
-              <svg 
-                className="absolute left-0 top-0 bottom-0 w-full overflow-visible pointer-events-none" 
-                preserveAspectRatio="none" 
+              <svg
+                className="absolute left-0 top-0 bottom-0 w-full overflow-visible pointer-events-none"
+                preserveAspectRatio="none"
                 viewBox="0 0 100 100"
               >
-                <polyline 
-                  points={desktopWavePoints} 
-                  fill="none" 
-                  stroke="rgba(255,255,255,0.08)" 
-                  strokeWidth="2" 
-                  vectorEffect="non-scaling-stroke" 
+                <polyline
+                  points={desktopWavePoints}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.08)"
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
                 />
               </svg>
 
               {/* Glowing Active Path */}
-              <motion.div 
+              <motion.div
                 className="absolute left-0 top-0 bottom-0 w-full pointer-events-none"
                 style={{ clipPath }}
               >
-                <svg 
-                  className="absolute left-0 top-0 bottom-0 w-full overflow-visible pointer-events-none" 
-                  preserveAspectRatio="none" 
+                <svg
+                  className="absolute left-0 top-0 bottom-0 w-full overflow-visible pointer-events-none"
+                  preserveAspectRatio="none"
                   viewBox="0 0 100 100"
                 >
-                  <polyline 
-                    points={desktopWavePoints} 
-                    fill="none" 
-                    stroke="#f59e0b" 
-                    strokeWidth="4" 
-                    vectorEffect="non-scaling-stroke" 
+                  <polyline
+                    points={desktopWavePoints}
+                    fill="none"
+                    stroke="#f59e0b"
+                    strokeWidth="4"
+                    vectorEffect="non-scaling-stroke"
                   />
                 </svg>
               </motion.div>
             </div>
 
             {/* Mobile Paths - extended downwards to continue the path */}
-            <div className="block sm:hidden absolute top-0 left-0 right-0 -bottom-24 z-0">
+            <div className="block sm:hidden absolute top-12 left-0 right-0 -bottom-24 z-0">
               {/* Faint Background Path */}
-              <svg 
-                className="absolute left-0 top-0 bottom-0 w-full overflow-visible pointer-events-none" 
-                preserveAspectRatio="none" 
+              <svg
+                className="absolute left-0 top-0 bottom-0 w-full overflow-visible pointer-events-none"
+                preserveAspectRatio="none"
                 viewBox="0 0 100 100"
               >
-                <polyline 
-                  points={mobileWavePoints} 
-                  fill="none" 
-                  stroke="rgba(255,255,255,0.08)" 
-                  strokeWidth="2" 
-                  vectorEffect="non-scaling-stroke" 
+                <polyline
+                  points={mobileWavePoints}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.08)"
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
                 />
               </svg>
 
               {/* Glowing Active Path */}
-              <motion.div 
+              <motion.div
                 className="absolute left-0 top-0 bottom-0 w-full pointer-events-none"
                 style={{ clipPath }}
               >
-                <svg 
-                  className="absolute left-0 top-0 bottom-0 w-full overflow-visible pointer-events-none" 
-                  preserveAspectRatio="none" 
+                <svg
+                  className="absolute left-0 top-0 bottom-0 w-full overflow-visible pointer-events-none"
+                  preserveAspectRatio="none"
                   viewBox="0 0 100 100"
                 >
-                  <polyline 
-                    points={mobileWavePoints} 
-                    fill="none" 
-                    stroke="#f59e0b" 
-                    strokeWidth="4" 
-                    vectorEffect="non-scaling-stroke" 
+                  <polyline
+                    points={mobileWavePoints}
+                    fill="none"
+                    stroke="#f59e0b"
+                    strokeWidth="4"
+                    vectorEffect="non-scaling-stroke"
                   />
                 </svg>
               </motion.div>
@@ -238,13 +240,13 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: i * 0.1 }}
                 viewport={{ once: true }}
-                className={`relative flex items-center gap-3 sm:gap-6 py-6 sm:py-8 flex-row ${i % 2 !== 0 ? 'sm:flex-row-reverse' : ''}`}
+                className={`relative flex items-center gap-3 sm:gap-6 py-6 sm:py-8 flex-row ${i % 2 !== 0 ? 'flex-row-reverse' : ''}`}
               >
-                <div className={`w-full sm:w-1/2 ${i % 2 === 0 ? 'pl-16 sm:pl-0 pr-4 sm:pr-12 text-center sm:text-right' : 'pl-16 sm:pl-12 pr-4 sm:pr-0 text-center sm:text-left'}`}>
+                <div className={`w-1/2 ${i % 2 === 0 ? 'pr-4 sm:pr-12 text-right' : 'pl-4 sm:pl-12 text-left'}`}>
                   <div className="glass-light p-4 sm:p-6 hover:shadow-[0_0_20px_rgba(245,158,11,0.1)] transition-shadow">
                     <span className="text-[10px] sm:text-xs font-bold text-amber-500 uppercase tracking-widest">{event.year}</span>
                     <h3 className="font-display font-bold text-lg sm:text-xl text-white mt-1 sm:mt-2 mb-2 sm:mb-3">{event.title}</h3>
-                    <p className="text-gray-400 font-light text-xs sm:text-sm leading-relaxed mx-auto max-w-sm sm:mx-0 sm:max-w-none">{event.desc}</p>
+                    <p className="text-gray-400 font-light text-xs sm:text-sm leading-relaxed">{event.desc}</p>
                   </div>
                 </div>
               </motion.div>

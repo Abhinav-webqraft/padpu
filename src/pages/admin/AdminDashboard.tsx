@@ -136,24 +136,6 @@ export default function AdminDashboard() {
         </table>
       </div>
 
-      {/* Frontend Management Section */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold">Frontend Management</h2>
-            <p className="text-sm text-gray-400 mt-1">Quick links to update content across the website</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {['Home Page', 'Shop Page', 'About Us', 'Contact Page'].map((page, index) => (
-            <div key={index} className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-start gap-4 group cursor-pointer">
-              <h3 className="font-semibold text-lg text-white group-hover:text-amber-500 transition-colors">{page}</h3>
-              <p className="text-xs text-gray-400 line-clamp-2">Manage text, banners, and layouts for the {page}.</p>
-              <button className="text-sm font-medium text-amber-500 mt-auto hover:text-amber-400">Edit Content &rarr;</button>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

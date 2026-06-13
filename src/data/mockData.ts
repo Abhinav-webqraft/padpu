@@ -1,5 +1,17 @@
 import { Product, GalleryImage, Testimonial, Order, Coupon, AdminStats } from '../types';
 
+export let categories = ['Pure Honey', 'Forest Honey', 'Flavoured Honey', 'Gift Packs'];
+
+export const addCategory = (cat: string) => {
+  if (!categories.includes(cat)) {
+    categories = [...categories, cat];
+  }
+};
+
+export const deleteCategory = (cat: string) => {
+  categories = categories.filter(c => c !== cat);
+};
+
 export const products: Product[] = [
   {
     id: '1',
@@ -311,7 +323,7 @@ export const testimonials: Testimonial[] = [
   },
 ];
 
-export const mockOrders: Order[] = [
+export let mockOrders: Order[] = [
   {
     id: 'ord1',
     orderNumber: 'PF-2026-001',
@@ -514,7 +526,11 @@ export const adminStats: AdminStats = {
   todayOrders: 18,
   todayRevenue: 32450,
   monthOrders: 342,
-  monthRevenue: 512800,
+  monthRevenue: 154000,
+};
+
+export const addOrder = (order: Order) => {
+  mockOrders = [order, ...mockOrders];
 };
 
 export const revenueChartData = [

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -6,21 +6,23 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import BottomNav from './components/layout/BottomNav';
 import CartDrawer from './components/cart/CartDrawer';
-import HomePage from './pages/HomePage';
-import ShopPage from './pages/ShopPage';
-import ProductDetailPage from './pages/ProductDetailPage';
-import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
-import GalleryPage from './pages/GalleryPage';
-import ProfilePage from './pages/ProfilePage';
-import WishlistPage from './pages/WishlistPage';
-import CheckoutPage from './pages/CheckoutPage';
-import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminSidebar from './components/admin/AdminSidebar';
-import AdminOrdersPage from './pages/admin/AdminOrdersPage';
-import AdminProductsPage from './pages/admin/AdminProductsPage';
-import AdminGalleryPage from './pages/admin/AdminGalleryPage';
-import LoginPage from './pages/LoginPage';
+
+const HomePage = lazy(() => import('./pages/HomePage'));
+const ShopPage = lazy(() => import('./pages/ShopPage'));
+const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const GalleryPage = lazy(() => import('./pages/GalleryPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const WishlistPage = lazy(() => import('./pages/WishlistPage'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'));
+const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'));
+const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
+const AdminGalleryPage = lazy(() => import('./pages/admin/AdminGalleryPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
 // ScrollToTop component to reset window scroll position on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -74,30 +76,33 @@ function App() {
       <ScrollToTop />
       <CartProvider>
         <AuthProvider>
-          <Routes>
-            {/* Login Route */}
-            <Route path="/login" element={<LoginPage />} />
+          <Suspense fallback={<div className="min-h-screen bg-[#0d0a05] flex items-center justify-center font-display text-xl text-amber-500/70 animate-pulse">Loading...</div>}>
+            <Routes>
+              {/* Login Route */}
+              <Route path="/login" element={<LoginPage />} />
 
-            {/* User Routes (Protected) */}
-            <Route path="/" element={<ProtectedUserRoute><HomePage /></ProtectedUserRoute>} />
-            <Route path="/shop" element={<ProtectedUserRoute><ShopPage /></ProtectedUserRoute>} />
-            <Route path="/shop/:slug" element={<ProtectedUserRoute><ProductDetailPage /></ProtectedUserRoute>} />
-            <Route path="/checkout" element={<ProtectedUserRoute><CheckoutPage /></ProtectedUserRoute>} />
-            <Route path="/about" element={<ProtectedUserRoute><AboutPage /></ProtectedUserRoute>} />
-            <Route path="/contact" element={<ProtectedUserRoute><ContactPage /></ProtectedUserRoute>} />
-            <Route path="/gallery" element={<ProtectedUserRoute><GalleryPage /></ProtectedUserRoute>} />
-            <Route path="/profile" element={<ProtectedUserRoute><ProfilePage /></ProtectedUserRoute>} />
-            <Route path="/wishlist" element={<ProtectedUserRoute><WishlistPage /></ProtectedUserRoute>} />
+              {/* User Routes (Protected) */}
+              <Route path="/" element={<ProtectedUserRoute><HomePage /></ProtectedUserRoute>} />
+              <Route path="/shop" element={<ProtectedUserRoute><ShopPage /></ProtectedUserRoute>} />
+              <Route path="/shop/:slug" element={<ProtectedUserRoute><ProductDetailPage /></ProtectedUserRoute>} />
+              <Route path="/checkout" element={<ProtectedUserRoute><CheckoutPage /></ProtectedUserRoute>} />
+              <Route path="/about" element={<ProtectedUserRoute><AboutPage /></ProtectedUserRoute>} />
+              <Route path="/contact" element={<ProtectedUserRoute><ContactPage /></ProtectedUserRoute>} />
+              <Route path="/gallery" element={<ProtectedUserRoute><GalleryPage /></ProtectedUserRoute>} />
+              <Route path="/profile" element={<ProtectedUserRoute><ProfilePage /></ProtectedUserRoute>} />
+              <Route path="/wishlist" element={<ProtectedUserRoute><WishlistPage /></ProtectedUserRoute>} />
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
-            <Route path="/admin/orders" element={<ProtectedAdminRoute><AdminOrdersPage /></ProtectedAdminRoute>} />
-            <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProductsPage /></ProtectedAdminRoute>} />
-            <Route path="/admin/gallery" element={<ProtectedAdminRoute><AdminGalleryPage /></ProtectedAdminRoute>} />
+              {/* Admin Routes */}
+              <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
+              <Route path="/admin/orders" element={<ProtectedAdminRoute><AdminOrdersPage /></ProtectedAdminRoute>} />
+              <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProductsPage /></ProtectedAdminRoute>} />
+              <Route path="/admin/categories" element={<ProtectedAdminRoute><AdminCategoriesPage /></ProtectedAdminRoute>} />
+              <Route path="/admin/gallery" element={<ProtectedAdminRoute><AdminGalleryPage /></ProtectedAdminRoute>} />
 
-            {/* Catch-all to redirect to login */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
+              {/* Catch-all to redirect to login */}
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </Suspense>
         </AuthProvider>
       </CartProvider>
     </BrowserRouter>

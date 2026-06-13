@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { CheckCircle, ArrowLeft, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
+import { addOrder } from "../data/mockData";
+import { Order } from "../types";
 
 export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
@@ -13,8 +15,42 @@ export default function CheckoutPage() {
   const tax = Math.round(subtotal * TAX_RATE);
   const total = subtotal + tax + shippingCharge;
 
+  const [form, setForm] = useState({
+    email: '', phone: '', fullName: '', line1: '', city: '', state: '', pincode: '', payment: 'card'
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const newOrder: Order = {
+      id: `ord-${Date.now()}`,
+      orderNumber: `PF-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`,
+      customerName: form.fullName,
+      customerEmail: form.email,
+      customerPhone: form.phone,
+      items: items,
+      shippingAddress: {
+        fullName: form.fullName,
+        phone: form.phone,
+        line1: form.line1,
+        city: form.city,
+        state: form.state,
+        pincode: form.pincode
+      },
+      subtotal,
+      tax,
+      shippingCharge,
+      discount: 0,
+      total,
+      paymentStatus: 'paid',
+      paymentMethod: form.payment,
+      orderStatus: 'confirmed',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    addOrder(newOrder);
+
     setIsSuccess(true);
     clearCart();
     window.scrollTo(0, 0);
@@ -89,11 +125,11 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Email Address</label>
-                    <input required type="email" className="input-dark w-full" placeholder="you@example.com" />
+                    <input required type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} className="input-dark w-full" placeholder="you@example.com" />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Phone Number</label>
-                    <input required type="tel" className="input-dark w-full" placeholder="+91 98765 43210" />
+                    <input required type="tel" value={form.phone} onChange={e => setForm(p => ({...p, phone: e.target.value}))} className="input-dark w-full" placeholder="+91 98765 43210" />
                   </div>
                 </div>
               </div>
@@ -104,23 +140,23 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Full Name</label>
-                    <input required type="text" className="input-dark w-full" />
+                    <input required type="text" value={form.fullName} onChange={e => setForm(p => ({...p, fullName: e.target.value}))} className="input-dark w-full" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Street Address</label>
-                    <input required type="text" className="input-dark w-full" placeholder="House number and street name" />
+                    <input required type="text" value={form.line1} onChange={e => setForm(p => ({...p, line1: e.target.value}))} className="input-dark w-full" placeholder="House number and street name" />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">City</label>
-                    <input required type="text" className="input-dark w-full" />
+                    <input required type="text" value={form.city} onChange={e => setForm(p => ({...p, city: e.target.value}))} className="input-dark w-full" />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">State</label>
-                    <input required type="text" className="input-dark w-full" />
+                    <input required type="text" value={form.state} onChange={e => setForm(p => ({...p, state: e.target.value}))} className="input-dark w-full" />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">PIN Code</label>
-                    <input required type="text" className="input-dark w-full" />
+                    <input required type="text" value={form.pincode} onChange={e => setForm(p => ({...p, pincode: e.target.value}))} className="input-dark w-full" />
                   </div>
                 </div>
               </div>
@@ -139,7 +175,7 @@ export default function CheckoutPage() {
                       className="flex items-center p-4 rounded-xl cursor-pointer border transition-all hover:border-amber-500/30 hover:bg-amber-500/5"
                       style={{ borderColor: 'rgba(255,255,255,0.08)' }}
                     >
-                      <input type="radio" name="payment" className="w-4 h-4 accent-amber-500" defaultChecked={opt.defaultChecked} />
+                      <input type="radio" name="payment" value={opt.id} checked={form.payment === opt.id} onChange={e => setForm(p => ({...p, payment: e.target.value}))} className="w-4 h-4 accent-amber-500" />
                       <span className="ml-3 font-medium text-gray-200 text-sm">{opt.label}</span>
                     </label>
                   ))}

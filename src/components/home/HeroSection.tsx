@@ -155,34 +155,40 @@ export default function HeroSection() {
   useEffect(() => {
     let loaded = 0;
     const images: HTMLImageElement[] = new Array(TOTAL_FRAMES);
+    imagesRef.current = images;
 
     const promises = ALL_FRAMES.map((framePath, index) => {
       return new Promise<void>((resolve) => {
         const img = new Image();
         img.src = framePath;
-        img.onload = () => {
+        
+        const finishLoad = () => {
           images[index] = img;
           loaded++;
           setLoadProgress(Math.round((loaded / TOTAL_FRAMES) * 100));
+
+          // Unblock the UI as soon as the first frame (landing image) loads
+          if (index === 0) {
+            setIsLoaded(true);
+            drawFrame(0);
+            setTimeout(() => {
+              setLogoVisible(false);
+            }, 1000);
+          }
           resolve();
         };
+
+        img.onload = finishLoad;
         img.onerror = () => {
           console.warn(`Failed to load scroll frame: ${framePath}`);
-          loaded++;
-          setLoadProgress(Math.round((loaded / TOTAL_FRAMES) * 100));
-          resolve();
+          finishLoad();
         };
       });
     });
 
+    // Keep imagesRef updated just in case
     Promise.all(promises).then(() => {
       imagesRef.current = images;
-      setIsLoaded(true);
-      drawFrame(0); // Show landing image initially
-      // Auto-fade the logo out after 1 second
-      setTimeout(() => {
-        setLogoVisible(false);
-      }, 1000);
     });
   }, [drawFrame]);
 
@@ -426,7 +432,7 @@ export default function HeroSection() {
         <div
           ref={text1Ref}
           className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
-          style={{ opacity: 0, transform: "translateY(40px)" }}
+          style={{ opacity: 0, transform: "translateY(40px)", willChange: "transform, opacity" }}
         >
           <IntermediateText title="100% Raw & Unfiltered." subtitle="Straight from the deep forest to your table." />
         </div>
@@ -435,7 +441,7 @@ export default function HeroSection() {
         <div
           ref={text2Ref}
           className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
-          style={{ opacity: 0, transform: "translateY(40px)" }}
+          style={{ opacity: 0, transform: "translateY(40px)", willChange: "transform, opacity" }}
         >
           <IntermediateText title="Ethically Harvested." subtitle="Respecting nature's delicate balance." />
         </div>
@@ -444,7 +450,7 @@ export default function HeroSection() {
         <div
           ref={text3Ref}
           className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
-          style={{ opacity: 0, transform: "translateY(40px)" }}
+          style={{ opacity: 0, transform: "translateY(40px)", willChange: "transform, opacity" }}
         >
           <IntermediateText title="Rich in Antioxidants." subtitle="Nature's pure, liquid gold." />
         </div>
@@ -453,7 +459,7 @@ export default function HeroSection() {
         <div
           ref={overlayRef}
           className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
-          style={{ opacity: 0, transition: "opacity 0.15s ease-out, transform 0.15s ease-out" }}
+          style={{ opacity: 0, transition: "opacity 0.15s ease-out, transform 0.15s ease-out", willChange: "transform, opacity" }}
         >
           <HeroOverlayContent />
         </div>

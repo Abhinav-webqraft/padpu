@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { galleryImages } from '../../data/mockData';
+import { galleryImages, categories as globalCategories } from '../../data/mockData';
 import type { GalleryImage } from '../../types';
-import { Plus, Trash2, X, Image as ImageIcon } from 'lucide-react';
-
-const CATEGORIES = ['Farm', 'Products', 'Bees', 'Harvest'];
+import { Plus, Trash2, X, Image as ImageIcon, Upload } from 'lucide-react';
 
 export default function AdminGalleryPage() {
   const [images, setImages] = useState<GalleryImage[]>(galleryImages);
   const [showAdd, setShowAdd] = useState(false);
   const [lightbox, setLightbox] = useState<GalleryImage | null>(null);
-  const [newImage, setNewImage] = useState({ url: '', title: '', description: '', category: 'Farm' });
+  const [newImage, setNewImage] = useState({ url: '', title: '', description: '', category: globalCategories[0] || 'Uncategorized' });
 
   const addImage = () => {
     if (!newImage.url || !newImage.title) { alert('URL and title are required.'); return; }
@@ -25,7 +23,7 @@ export default function AdminGalleryPage() {
       },
       ...prev,
     ]);
-    setNewImage({ url: '', title: '', description: '', category: 'Farm' });
+    setNewImage({ url: '', title: '', description: '', category: globalCategories[0] || 'Uncategorized' });
     setShowAdd(false);
   };
 
@@ -102,15 +100,45 @@ export default function AdminGalleryPage() {
               </div>
 
               <div className="space-y-4">
+                {/* Image Upload */}
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Image URL *</label>
-                  <input type="text" value={newImage.url} onChange={e => setNewImage(p => ({ ...p, url: e.target.value }))} className="input-dark w-full" placeholder="https://... or /images/..." />
+                  <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Image *</label>
+                  <label 
+                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-2xl cursor-pointer hover:bg-white/5 hover:border-amber-500/50 transition-all relative overflow-hidden"
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                      e.preventDefault();
+                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                        setNewImage(p => ({ ...p, url: URL.createObjectURL(e.dataTransfer.files[0]) }));
+                      }
+                    }}
+                  >
+                    {newImage.url ? (
+                      <>
+                        <img src={newImage.url} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                          <Upload className="w-8 h-8 text-white mb-2" />
+                          <span className="text-sm font-semibold text-white">Change Image</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-gray-500">
+                        <Upload className="w-8 h-8 mb-2" />
+                        <p className="text-sm font-medium">Click or drag image to upload</p>
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={e => {
+                        if (e.target.files && e.target.files[0]) {
+                          setNewImage(p => ({ ...p, url: URL.createObjectURL(e.target.files[0]) }));
+                        }
+                      }}
+                    />
+                  </label>
                 </div>
-                {newImage.url && (
-                  <div className="rounded-xl overflow-hidden h-32">
-                    <img src={newImage.url} alt="Preview" className="w-full h-full object-cover" onError={e => (e.currentTarget.src = '/images/honey-jar.png')} />
-                  </div>
-                )}
                 <div>
                   <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Title *</label>
                   <input type="text" value={newImage.title} onChange={e => setNewImage(p => ({ ...p, title: e.target.value }))} className="input-dark w-full" placeholder="Image title" />
@@ -122,7 +150,7 @@ export default function AdminGalleryPage() {
                 <div>
                   <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Category *</label>
                   <select value={newImage.category} onChange={e => setNewImage(p => ({ ...p, category: e.target.value }))} className="input-dark w-full">
-                    {CATEGORIES.map(c => <option key={c} value={c} className="bg-[#0f170c]">{c}</option>)}
+                    {globalCategories.map(c => <option key={c} value={c} className="bg-[#0f170c]">{c}</option>)}
                   </select>
                 </div>
               </div>
