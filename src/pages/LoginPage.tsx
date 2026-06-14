@@ -1,27 +1,37 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock, Mail, ArrowRight, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import LiquidGlass from '../components/ui/LiquidGlass';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(location.state?.message || '');
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email === 'admin@padpu.com' && password === 'admin123') {
-      login('admin');
-      navigate('/admin');
-    } else if (email === 'user@padpu.com' && password === 'user123') {
-      login('user');
-      navigate('/');
-    } else {
-      setError('Invalid credentials. Try admin@padpu.com / admin123 or user@padpu.com / user123');
+    setIsLoading(true);
+    setError('');
+    setSuccessMessage('');
+    try {
+      const userRole = await login(identifier, password);
+      if (userRole === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Invalid credentials');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -74,15 +84,15 @@ export default function LoginPage() {
 
             <form onSubmit={handleLogin} className="w-full space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-white/60 mb-1.5 ml-1 uppercase tracking-wider">Email</label>
+                <label className="block text-xs font-semibold text-white/60 mb-1.5 ml-1 uppercase tracking-wider">Email or Phone Number</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-400/60" />
                   <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    type="text"
+                    value={identifier}
+                    onChange={e => setIdentifier(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 rounded-2xl text-white placeholder-white/30 text-sm outline-none transition-all"
-                    placeholder="name@padpu.com"
+                    placeholder="name@padpu.com or 9876543210"
                     required
                     style={{
                       background: 'rgba(255,255,255,0.08)',
@@ -132,10 +142,26 @@ export default function LoginPage() {
                 </motion.p>
               )}
 
+              {successMessage && (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-green-300 text-xs text-center py-2.5 px-4 rounded-xl"
+                  style={{
+                    background: 'rgba(74,222,128,0.12)',
+                    border: '1px solid rgba(74,222,128,0.25)',
+                    borderTopColor: 'rgba(74,222,128,0.4)',
+                  }}
+                >
+                  {successMessage}
+                </motion.p>
+              )}
+
               {/* Submit button — liquid glass amber */}
               <button
                 type="submit"
-                className="w-full mt-2 flex items-center justify-center gap-2 font-bold py-3.5 px-4 rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden"
+                disabled={isLoading}
+                className="w-full mt-2 flex items-center justify-center gap-2 font-bold py-3.5 px-4 rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden disabled:opacity-50 disabled:hover:scale-100"
                 style={{
                   background: 'linear-gradient(135deg, rgba(251,191,36,0.9) 0%, rgba(245,158,11,0.95) 50%, rgba(217,119,6,0.9) 100%)',
                   color: '#1c1005',
@@ -144,15 +170,18 @@ export default function LoginPage() {
                   borderTopColor: 'rgba(255,255,255,0.7)',
                 }}
               >
-                Sign In
-                <ArrowRight className="w-4 h-4" />
+                {isLoading ? 'Signing in...' : 'Sign In'}
+                {!isLoading && <ArrowRight className="w-4 h-4" />}
               </button>
             </form>
 
             <div className="mt-7 pt-5 w-full border-t border-white/10 text-center space-y-1">
-              <p className="text-xs text-white/30">Demo accounts</p>
-              <p className="text-xs text-white/50">user@padpu.com / <span className="text-amber-400/70">user123</span></p>
-              <p className="text-xs text-white/50">admin@padpu.com / <span className="text-amber-400/70">admin123</span></p>
+              <p className="text-xs text-white/50">
+                Don't have an account?{' '}
+                <Link to="/signup" className="text-amber-400 hover:text-amber-300 font-semibold transition-colors">
+                  Sign Up
+                </Link>
+              </p>
             </div>
           </div>
         </LiquidGlass>

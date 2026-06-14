@@ -23,6 +23,7 @@ const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
 const AdminGalleryPage = lazy(() => import('./pages/admin/AdminGalleryPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const SignupPage = lazy(() => import('./pages/SignupPage'));
 // ScrollToTop component to reset window scroll position on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -78,8 +79,9 @@ function App() {
         <AuthProvider>
           <Suspense fallback={<div className="min-h-screen bg-[#0d0a05] flex items-center justify-center font-display text-xl text-amber-500/70 animate-pulse">Loading...</div>}>
             <Routes>
-              {/* Login Route */}
+              {/* Login/Signup Routes */}
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
 
               {/* User Routes (Protected) */}
               <Route path="/" element={<ProtectedUserRoute><HomePage /></ProtectedUserRoute>} />

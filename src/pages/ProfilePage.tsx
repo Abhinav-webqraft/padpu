@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { mockOrders } from '../data/mockData';
-import { User, Package, Heart, LogOut, X, ChevronRight, MapPin, CreditCard } from 'lucide-react';
+import { User, Package, Heart, LogOut, X, ChevronRight, MapPin, CreditCard, Edit2 } from 'lucide-react';
 
 type OrderStatus = 'confirmed' | 'processing' | 'packed' | 'dispatched' | 'delivered' | 'cancelled';
 
-const STATUS_STYLES: Record<string, string> = {
+const STATUS_STYLES: Record<OrderStatus, string> = {
   confirmed: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
   processing: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30',
   packed: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
@@ -19,10 +19,18 @@ const STATUS_STYLES: Record<string, string> = {
 const STATUS_STEPS = ['confirmed', 'processing', 'packed', 'dispatched', 'delivered'];
 
 export default function ProfilePage() {
-  const { logout, role } = useAuth();
   const navigate = useNavigate();
   const [showOrders, setShowOrders] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<typeof mockOrders[0] | null>(null);
+
+  // Update Profile State
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateData, setUpdateData] = useState({ name: '', email: '', location: '', password: '' });
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState('');
+  const [updateSuccess, setUpdateSuccess] = useState('');
+
+  const { logout, role, user, updateProfile } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -30,8 +38,33 @@ export default function ProfilePage() {
   };
 
   const totalSpent = mockOrders.reduce((s, o) => s + o.total, 0);
-  const userName = role === 'admin' ? 'Admin User' : 'Demo Customer';
-  const userEmail = role === 'admin' ? 'admin@padpu.com' : 'user@padpu.com';
+  const userName = user?.name || 'Loading...';
+  const userEmail = user?.email || 'Loading...';
+
+  const handleOpenUpdateModal = () => {
+    if (user) {
+      setUpdateData({ name: user.name, email: user.email, location: user.location || '', password: '' });
+    }
+    setUpdateError('');
+    setUpdateSuccess('');
+    setShowUpdateModal(true);
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    setUpdateError('');
+    setUpdateSuccess('');
+    try {
+      await updateProfile(updateData);
+      setUpdateSuccess('Profile updated successfully!');
+      setTimeout(() => setShowUpdateModal(false), 2000);
+    } catch (err: any) {
+      setUpdateError(err.message || 'Failed to update profile');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0d0a05] relative overflow-hidden pt-20 pb-24 md:pb-8">
@@ -63,17 +96,28 @@ export default function ProfilePage() {
             <div className="text-center sm:text-left flex-1">
               <h1 className="font-display font-bold text-2xl text-white">{userName}</h1>
               <p className="text-gray-400 text-sm mt-1">{userEmail}</p>
-              <p className="text-xs text-amber-500 font-semibold uppercase tracking-wider mt-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-3 py-0.5 inline-block">
-                {role === 'admin' ? '👑 Admin' : '🐝 Honey Lover'}
-              </p>
+              <div className="flex flex-wrap items-center gap-2 mt-2 justify-center sm:justify-start">
+                <p className="text-xs text-amber-500 font-semibold uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 rounded-full px-3 py-0.5 inline-block">
+                  {role === 'admin' ? '👑 Admin' : '🐝 Honey Lover'}
+                </p>
+              </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-400/30 transition-all"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
+            <div className="flex flex-col gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+              <button
+                onClick={handleOpenUpdateModal}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-500/20 hover:border-amber-400/30 transition-all"
+              >
+                <Edit2 className="w-4 h-4" />
+                Edit Profile
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-400/30 transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
+            </div>
           </div>
         </motion.div>
 
@@ -129,9 +173,9 @@ export default function ProfilePage() {
             {[
               { label: 'Name', value: userName },
               { label: 'Email', value: userEmail },
-              { label: 'Phone', value: '+91 98765 43210' },
-              { label: 'Location', value: 'Himachal Pradesh, India' },
-              { label: 'Member Since', value: 'January 2026' },
+              { label: 'Phone', value: user?.phonenumber || '-' },
+              { label: 'Location', value: user?.location || '-' },
+              { label: 'Member Since', value: user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '-' },
             ].map(({ label, value }) => (
               <div key={label} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
                 <span className="text-gray-500">{label}</span>
@@ -262,6 +306,88 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Update Profile Modal */}
+      <AnimatePresence>
+        {showUpdateModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
+            onClick={() => setShowUpdateModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-md bg-[#120e0a] border border-white/15 rounded-3xl p-6"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-display font-bold text-white">Update Profile</h2>
+                <button onClick={() => setShowUpdateModal(false)} className="text-gray-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-white/60 mb-1.5 uppercase tracking-wider">Name</label>
+                  <input
+                    type="text"
+                    value={updateData.name}
+                    onChange={e => setUpdateData({ ...updateData, name: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-amber-500/50"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-white/60 mb-1.5 uppercase tracking-wider">Email</label>
+                  <input
+                    type="email"
+                    value={updateData.email}
+                    onChange={e => setUpdateData({ ...updateData, email: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-amber-500/50"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-white/60 mb-1.5 uppercase tracking-wider">Location</label>
+                  <input
+                    type="text"
+                    value={updateData.location}
+                    onChange={e => setUpdateData({ ...updateData, location: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-amber-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-white/60 mb-1.5 uppercase tracking-wider">New Password (optional)</label>
+                  <input
+                    type="password"
+                    value={updateData.password}
+                    onChange={e => setUpdateData({ ...updateData, password: e.target.value })}
+                    placeholder="Leave blank to keep current password"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-amber-500/50"
+                  />
+                </div>
+
+                {updateError && <p className="text-red-400 text-xs text-center">{updateError}</p>}
+                {updateSuccess && <p className="text-green-400 text-xs text-center">{updateSuccess}</p>}
+
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="w-full py-3 mt-2 rounded-xl font-bold text-[#1c1005] transition-all disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.9) 0%, rgba(245,158,11,0.95) 50%, rgba(217,119,6,0.9) 100%)' }}
+                >
+                  {isUpdating ? 'Saving...' : 'Save Changes'}
+                </button>
+              </form>
             </motion.div>
           </motion.div>
         )}
