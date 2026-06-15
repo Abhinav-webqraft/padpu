@@ -98,7 +98,7 @@ export default function AdminCategoriesPage() {
 
         <div className="space-y-3">
           <AnimatePresence>
-            {categories.map((cat, i) => (
+            {categories.map((cat) => (
               <motion.div
                 key={cat}
                 layout
