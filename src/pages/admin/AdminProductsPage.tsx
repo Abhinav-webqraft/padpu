@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { products as initialProducts, categories as globalCategories } from '../../data/mockData';
 import type { Product } from '../../types';
 import { Plus, Edit2, Trash2, Package, X, Check, Search, Upload } from 'lucide-react';
 
@@ -23,16 +22,37 @@ const BLANK: NewProduct = {
 };
 
 export default function AdminProductsPage() {
-  const [allProducts, setAllProducts] = useState<Product[]>(initialProducts);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [globalCategories, setGlobalCategories] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<NewProduct>(BLANK);
   const [search, setSearch] = useState('');
+  const [message, setMessage] = useState('');
 
   const filtered = allProducts.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.category.toLowerCase().includes(search.toLowerCase())
+    p.category?.toLowerCase().includes(search.toLowerCase())
   );
+
+  useEffect(() => {
+    fetchCategories();
+    fetchProducts();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/categories');
+      if (res.ok) setGlobalCategories(await res.json());
+    } catch (error) { console.error('Error fetching categories:', error); }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/products');
+      if (res.ok) setAllProducts(await res.json());
+    } catch (error) { console.error('Error fetching products:', error); }
+  };
 
   const openAdd = () => { setForm({...BLANK, category: globalCategories[0] || 'Pure Honey'}); setEditing(null); setShowForm(true); };
   const openEdit = (p: Product) => {
@@ -48,10 +68,55 @@ export default function AdminProductsPage() {
     setShowForm(true);
   };
 
-  const deleteProduct = (id: string) => {
+  const deleteProduct = async (id: string) => {
     if (confirm('Delete this product?')) {
-      setAllProducts(prev => prev.filter(p => p.id !== id));
+      try {
+        const res = await fetch(`http://localhost:5000/api/products/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          setAllProducts(prev => prev.filter(p => p.id !== id));
+        } else {
+          alert('Error deleting product');
+        }
+      } catch (error) {
+        console.error('Error deleting product:', error);
+      }
     }
+  };
+
+  const handleImageUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        const resizedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        setForm(p => ({ ...p, images: [resizedBase64] }));
+      };
+      img.src = e.target?.result as string;
+    };
   };
 
   const addWeightOption = () => {
@@ -75,46 +140,43 @@ export default function AdminProductsPage() {
     }));
   };
 
-  const saveProduct = () => {
+  const saveProduct = async () => {
     if (!form.name.trim()) { alert('Product name is required.'); return; }
     if (form.weightOptions.length === 0) { alert('At least one weight option is required.'); return; }
 
-    if (editing) {
-      setAllProducts(prev => prev.map(p => p.id === editing.id ? {
-        ...p, ...form,
-        price: Number(form.price),
-        originalPrice: Number(form.originalPrice),
-        stockQuantity: Number(form.stockQuantity),
-        weightOptions: form.weightOptions.map(w => ({
-          ...w, price: Number(w.price), grams: Number(w.grams)
-        })),
-      } : p));
-    } else {
-      const newId = String(Date.now());
-      const newProd: Product = {
-        id: newId,
+    try {
+      const url = editing ? `http://localhost:5000/api/products/${editing.id}` : 'http://localhost:5000/api/products';
+      const method = editing ? 'PUT' : 'POST';
+      
+      const payload = {
+        ...form,
         slug: form.name.toLowerCase().replace(/\s+/g, '-'),
-        name: form.name,
-        shortDescription: form.shortDescription,
-        description: form.description,
-        category: form.category,
         price: Number(form.price),
         originalPrice: Number(form.originalPrice),
-        inStock: form.inStock,
-        stockQuantity: Number(form.stockQuantity),
-        featured: form.featured,
         weightOptions: form.weightOptions.map(w => ({
           ...w, price: Number(w.price), grams: Number(w.grams)
-        })),
-        images: form.images.filter(Boolean),
-        tags: [],
-        rating: 0,
-        reviewCount: 0,
-        badge: undefined,
+        }))
       };
-      setAllProducts(prev => [newProd, ...prev]);
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        fetchProducts();
+        setShowForm(false);
+        setMessage(editing ? 'Changes made successfully' : 'Product created successfully');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Error saving product');
+      }
+    } catch (error) {
+      console.error('Error saving product:', error);
+      alert('Error saving product');
     }
-    setShowForm(false);
   };
 
   return (
@@ -148,6 +210,18 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
+      {/* Success Message */}
+      {message && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 flex items-center gap-2 font-medium"
+        >
+          <Check className="w-5 h-5" />
+          {message}
+        </motion.div>
+      )}
+
       {/* Product Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((p, i) => (
@@ -169,7 +243,7 @@ export default function AdminProductsPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${p.inStock ? 'text-green-300 bg-green-500/10 border-green-500/20' : 'text-red-300 bg-red-500/10 border-red-500/20'}`}>
-                  {p.inStock ? `In Stock (${p.stockQuantity})` : 'Out of Stock'}
+                  {p.inStock ? 'In Stock' : 'Out of Stock'}
                 </span>
                 {p.featured && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/20">Featured</span>}
               </div>
@@ -234,11 +308,11 @@ export default function AdminProductsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Base Price (₹) *</label>
-                    <input type="number" value={form.price || ''} onChange={e => setForm(p => ({ ...p, price: Number(e.target.value) }))} className="input-dark w-full" min={0} />
+                    <input type="number" onWheel={e => e.currentTarget.blur()} value={form.price || ''} onChange={e => setForm(p => ({ ...p, price: Number(e.target.value) }))} className="input-dark w-full" min={0} />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Original Price (₹)</label>
-                    <input type="number" value={form.originalPrice || ''} onChange={e => setForm(p => ({ ...p, originalPrice: Number(e.target.value) }))} className="input-dark w-full" min={0} />
+                    <input type="number" onWheel={e => e.currentTarget.blur()} value={form.originalPrice || ''} onChange={e => setForm(p => ({ ...p, originalPrice: Number(e.target.value) }))} className="input-dark w-full" min={0} />
                   </div>
                 </div>
 
@@ -255,8 +329,8 @@ export default function AdminProductsPage() {
                       <select value={w.label} onChange={e => updateWeight(i, 'label', e.target.value)} className="input-dark flex-1 text-sm">
                         {WEIGHT_LABELS.map(l => <option key={l} value={l} className="bg-[#0f170c]">{l}</option>)}
                       </select>
-                      <input type="number" placeholder="Price ₹" value={w.price || ''} onChange={e => updateWeight(i, 'price', e.target.value)} className="input-dark w-24 text-sm" min={0} />
-                      <input type="number" placeholder="Grams" value={w.grams || ''} onChange={e => updateWeight(i, 'grams', e.target.value)} className="input-dark w-20 text-sm" min={0} />
+                      <input type="number" onWheel={e => e.currentTarget.blur()} placeholder="Price ₹" value={w.price || ''} onChange={e => updateWeight(i, 'price', e.target.value)} className="input-dark w-24 text-sm" min={0} />
+                      <input type="number" onWheel={e => e.currentTarget.blur()} placeholder="Grams" value={w.grams || ''} onChange={e => updateWeight(i, 'grams', e.target.value)} className="input-dark w-20 text-sm" min={0} />
                       {form.weightOptions.length > 1 && (
                         <button onClick={() => removeWeightOption(i)} className="text-red-400 hover:text-red-300 px-1">
                           <X className="w-4 h-4" />
@@ -266,22 +340,16 @@ export default function AdminProductsPage() {
                   ))}
                 </div>
 
-                {/* Stock */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Stock Quantity</label>
-                    <input type="number" value={form.stockQuantity || ''} onChange={e => setForm(p => ({ ...p, stockQuantity: Number(e.target.value) }))} className="input-dark w-full" min={0} />
-                  </div>
-                  <div className="flex flex-col gap-2 pt-5">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={form.inStock} onChange={e => setForm(p => ({ ...p, inStock: e.target.checked }))} className="w-4 h-4 accent-amber-500" />
-                      <span className="text-sm text-gray-300">In Stock</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={form.featured} onChange={e => setForm(p => ({ ...p, featured: e.target.checked }))} className="w-4 h-4 accent-amber-500" />
-                      <span className="text-sm text-gray-300">Featured</span>
-                    </label>
-                  </div>
+                {/* Status */}
+                <div className="flex gap-6">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={form.inStock} onChange={e => setForm(p => ({ ...p, inStock: e.target.checked }))} className="w-4 h-4 accent-amber-500" />
+                    <span className="text-sm text-gray-300">In Stock</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={form.featured} onChange={e => setForm(p => ({ ...p, featured: e.target.checked }))} className="w-4 h-4 accent-amber-500" />
+                    <span className="text-sm text-gray-300">Featured</span>
+                  </label>
                 </div>
 
                 {/* Image Upload */}
@@ -293,7 +361,7 @@ export default function AdminProductsPage() {
                     onDrop={e => {
                       e.preventDefault();
                       if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                        setForm(p => ({ ...p, images: [URL.createObjectURL(e.dataTransfer.files[0])] }));
+                        handleImageUpload(e.dataTransfer.files[0]);
                       }
                     }}
                   >
@@ -317,7 +385,7 @@ export default function AdminProductsPage() {
                       accept="image/*"
                       onChange={e => {
                         if (e.target.files && e.target.files[0]) {
-                          setForm(p => ({ ...p, images: [URL.createObjectURL(e.target.files[0])] }));
+                          handleImageUpload(e.target.files[0]);
                         }
                       }}
                     />

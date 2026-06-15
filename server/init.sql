@@ -24,3 +24,20 @@ INSERT IGNORE INTO categories (name) VALUES
     ('Forest Honey'), 
     ('Flavoured Honey'), 
     ('Gift Packs');
+
+CREATE TABLE IF NOT EXISTS products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    shortDescription VARCHAR(255),
+    description TEXT,
+    category_name VARCHAR(255) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    originalPrice DECIMAL(10,2),
+    inStock BOOLEAN DEFAULT true,
+    featured BOOLEAN DEFAULT false,
+    weightOptions JSON,
+    images LONGTEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_name) REFERENCES categories(name) ON DELETE RESTRICT ON UPDATE CASCADE
+);
