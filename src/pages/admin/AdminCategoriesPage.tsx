@@ -1,13 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { categories as globalCategories, addCategory, deleteCategory } from '../../data/mockData';
 import { Plus, Trash2, Tags } from 'lucide-react';
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<string[]>(globalCategories);
+  const [categories, setCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
 
-  const handleAdd = (e: React.FormEvent) => {
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = newCategory.trim();
     if (!trimmed) return;
@@ -16,15 +31,42 @@ export default function AdminCategoriesPage() {
       return;
     }
     
-    addCategory(trimmed);
-    setCategories([...globalCategories]);
-    setNewCategory('');
+    try {
+      const response = await fetch('http://localhost:5000/api/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: trimmed }),
+      });
+
+      if (response.ok) {
+        setCategories([...categories, trimmed]);
+        setNewCategory('');
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Error adding category');
+      }
+    } catch (error) {
+      console.error('Error adding category:', error);
+    }
   };
 
-  const handleDelete = (cat: string) => {
+  const handleDelete = async (cat: string) => {
     if (confirm(`Are you sure you want to delete the category "${cat}"?`)) {
-      deleteCategory(cat);
-      setCategories([...globalCategories]);
+      try {
+        const response = await fetch(`http://localhost:5000/api/categories/${encodeURIComponent(cat)}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          setCategories(categories.filter(c => c !== cat));
+        } else {
+          alert('Error deleting category');
+        }
+      } catch (error) {
+        console.error('Error deleting category:', error);
+      }
     }
   };
 

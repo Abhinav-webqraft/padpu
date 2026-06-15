@@ -2,9 +2,7 @@ CREATE DATABASE IF NOT EXISTS padpu_db;
 
 USE padpu_db;
 
-DROP TABLE IF EXISTS users;
-
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     phonenumber VARCHAR(20) NOT NULL UNIQUE,
@@ -14,3 +12,15 @@ CREATE TABLE users (
     role VARCHAR(50) DEFAULT 'user',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT IGNORE INTO categories (name) VALUES 
+    ('Pure Honey'), 
+    ('Forest Honey'), 
+    ('Flavoured Honey'), 
+    ('Gift Packs');
