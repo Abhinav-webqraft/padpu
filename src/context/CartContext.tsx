@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import { CartItem, Product, WeightOption } from '../types';
+import { useAuth } from './AuthContext';
 
 interface CartState {
   items: CartItem[];
@@ -10,8 +11,8 @@ interface CartContextType {
   items: CartItem[];
   isOpen: boolean;
   addItem: (product: Product, weight: WeightOption, quantity?: number) => void;
-  removeItem: (productId: string, weightLabel: string) => void;
-  updateQuantity: (productId: string, weightLabel: string, quantity: number) => void;
+  removeItem: (productId: string, weightLabel: string, weightGrams: number) => void;
+  updateQuantity: (productId: string, weightLabel: string, weightGrams: number, quantity: number) => void;
   clearCart: () => void;
   openCart: () => void;
   closeCart: () => void;
@@ -22,8 +23,8 @@ interface CartContextType {
 
 type CartAction =
   | { type: 'ADD_ITEM'; payload: { product: Product; weight: WeightOption; quantity: number } }
-  | { type: 'REMOVE_ITEM'; payload: { productId: string; weightLabel: string } }
-  | { type: 'UPDATE_QUANTITY'; payload: { productId: string; weightLabel: string; quantity: number } }
+  | { type: 'REMOVE_ITEM'; payload: { productId: string; weightLabel: string; weightGrams: number } }
+  | { type: 'UPDATE_QUANTITY'; payload: { productId: string; weightLabel: string; weightGrams: number; quantity: number } }
   | { type: 'CLEAR_CART' }
   | { type: 'LOAD_CART'; payload: CartItem[] };
 
@@ -32,7 +33,7 @@ function cartReducer(state: CartItem[], action: CartAction): CartItem[] {
     case 'ADD_ITEM': {
       const { product, weight, quantity } = action.payload;
       const existingIndex = state.findIndex(
-        item => item.productId === product.id && item.selectedWeight.label === weight.label
+        item => item.productId === product.id && item.selectedWeight.label === weight.label && item.selectedWeight.grams === weight.grams
       );
       if (existingIndex >= 0) {
         const updated = [...state];
@@ -46,16 +47,16 @@ function cartReducer(state: CartItem[], action: CartAction): CartItem[] {
     }
     case 'REMOVE_ITEM':
       return state.filter(
-        item => !(item.productId === action.payload.productId && item.selectedWeight.label === action.payload.weightLabel)
+        item => !(item.productId === action.payload.productId && item.selectedWeight.label === action.payload.weightLabel && item.selectedWeight.grams === action.payload.weightGrams)
       );
     case 'UPDATE_QUANTITY': {
       if (action.payload.quantity <= 0) {
         return state.filter(
-          item => !(item.productId === action.payload.productId && item.selectedWeight.label === action.payload.weightLabel)
+          item => !(item.productId === action.payload.productId && item.selectedWeight.label === action.payload.weightLabel && item.selectedWeight.grams === action.payload.weightGrams)
         );
       }
       return state.map(item =>
-        item.productId === action.payload.productId && item.selectedWeight.label === action.payload.weightLabel
+        item.productId === action.payload.productId && item.selectedWeight.label === action.payload.weightLabel && item.selectedWeight.grams === action.payload.weightGrams
           ? { ...item, quantity: action.payload.quantity }
           : item
       );
@@ -72,34 +73,89 @@ function cartReducer(state: CartItem[], action: CartAction): CartItem[] {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, dispatch] = useReducer(cartReducer, [], () => {
-    try {
-      const saved = localStorage.getItem('padpu-cart');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const { token } = useAuth();
+  const [items, dispatch] = useReducer(cartReducer, []);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('padpu-cart', JSON.stringify(items));
-  }, [items]);
+    if (token) {
+      fetch('http://localhost:5000/api/cart', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch cart');
+        return res.json();
+      })
+      .then(data => dispatch({ type: 'LOAD_CART', payload: Array.isArray(data) ? data : [] }))
+      .catch(console.error);
+    } else {
+      dispatch({ type: 'CLEAR_CART' });
+    }
+  }, [token]);
 
-  const addItem = (product: Product, weight: WeightOption, quantity = 1) => {
-    dispatch({ type: 'ADD_ITEM', payload: { product, weight, quantity } });
-    setIsOpen(true);
+  const addItem = async (product: Product, weight: WeightOption, quantity = 1) => {
+    if (!token) return alert('Please login to add items to cart');
+    try {
+      const res = await fetch('http://localhost:5000/api/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ productId: product.id, weightLabel: weight.label, weightGrams: weight.grams, quantity })
+      });
+      if (res.ok) {
+        dispatch({ type: 'ADD_ITEM', payload: { product, weight, quantity } });
+        setIsOpen(true);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const removeItem = (productId: string, weightLabel: string) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: { productId, weightLabel } });
+  const removeItem = async (productId: string, weightLabel: string, weightGrams: number) => {
+    if (!token) return;
+    try {
+      const res = await fetch('http://localhost:5000/api/cart/item', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ productId, weightLabel, weightGrams })
+      });
+      if (res.ok) {
+        dispatch({ type: 'REMOVE_ITEM', payload: { productId, weightLabel, weightGrams } });
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const updateQuantity = (productId: string, weightLabel: string, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, weightLabel, quantity } });
+  const updateQuantity = async (productId: string, weightLabel: string, weightGrams: number, quantity: number) => {
+    if (!token) return;
+    try {
+      const res = await fetch('http://localhost:5000/api/cart', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ productId, weightLabel, weightGrams, quantity })
+      });
+      if (res.ok) {
+        dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, weightLabel, weightGrams, quantity } });
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const clearCart = () => dispatch({ type: 'CLEAR_CART' });
+  const clearCart = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch('http://localhost:5000/api/cart', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        dispatch({ type: 'CLEAR_CART' });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
   const toggleCart = () => setIsOpen(prev => !prev);

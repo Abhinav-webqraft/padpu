@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { products } from "../data/mockData";
+import { useState, useEffect } from "react";
 import ProductCard from "../components/shop/ProductCard";
 import { Search, Filter } from "lucide-react";
 import { motion } from "framer-motion";
@@ -7,6 +6,14 @@ import { motion } from "framer-motion";
 export default function ShopPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/products')
+      .then(res => res.json())
+      .then(data => setProducts(data))
+      .catch(err => console.error(err));
+  }, []);
 
   const categories = ["All", ...Array.from(new Set(products.map((p) => p.category)))];
 

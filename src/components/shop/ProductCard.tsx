@@ -3,6 +3,7 @@ import { ShoppingCart, Heart } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { useState } from "react";
 import { Product } from "../../types";
+import { formatWeightLabel } from "../../utils/formatters";
 
 interface ProductCardProps {
   product: Product;
@@ -95,7 +96,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
             className="text-[10px] font-bold text-amber-400 mb-3 uppercase tracking-widest self-start px-2 py-1 rounded"
             style={{ background: "rgba(245, 158, 11, 0.1)" }}
           >
-            {defaultWeight.label}
+            {formatWeightLabel(defaultWeight.grams, defaultWeight.label)}
           </p>
         )}
         

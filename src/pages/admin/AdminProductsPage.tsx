@@ -308,7 +308,23 @@ export default function AdminProductsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Base Price (₹) *</label>
-                    <input type="number" onWheel={e => e.currentTarget.blur()} value={form.price || ''} onChange={e => setForm(p => ({ ...p, price: Number(e.target.value) }))} className="input-dark w-full" min={0} />
+                    <input 
+                      type="number" 
+                      onWheel={e => e.currentTarget.blur()} 
+                      value={form.price || ''} 
+                      onChange={e => {
+                        const newPrice = Number(e.target.value);
+                        setForm(p => {
+                          const newWeightOptions = [...p.weightOptions];
+                          if (newWeightOptions.length > 0) {
+                            newWeightOptions[0] = { ...newWeightOptions[0], price: newPrice };
+                          }
+                          return { ...p, price: newPrice, weightOptions: newWeightOptions };
+                        });
+                      }} 
+                      className="input-dark w-full" 
+                      min={0} 
+                    />
                   </div>
                   <div>
                     <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Original Price (₹)</label>

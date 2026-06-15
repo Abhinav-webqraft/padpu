@@ -5,6 +5,7 @@ import { CheckCircle, ArrowLeft, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { addOrder } from "../data/mockData";
 import { Order } from "../types";
+import { formatWeightLabel } from "../utils/formatters";
 
 export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
@@ -191,7 +192,7 @@ export default function CheckoutPage() {
 
               <div className="space-y-4 mb-6 max-h-[35vh] overflow-y-auto pr-1">
                 {items.map((item) => (
-                  <div key={`${item.productId}-${item.selectedWeight.label}`} className="flex gap-3">
+                  <div key={`${item.productId}-${item.selectedWeight.label}-${item.selectedWeight.grams}`} className="flex gap-3">
                     <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-amber-900/20 border border-white/10">
                       <img src={item.product.images[0]} alt={item.product.name} className="object-cover w-full h-full" />
                       <span className="absolute -top-1.5 -right-1.5 w-5 h-5 amber-gradient text-white text-[10px] font-bold rounded-full flex items-center justify-center z-10">
@@ -200,7 +201,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex-1 min-w-0 pt-0.5">
                       <p className="text-sm font-semibold text-white line-clamp-1">{item.product.name}</p>
-                      <p className="text-xs text-gray-500">{item.selectedWeight.label}</p>
+                      <p className="text-xs text-gray-500">{formatWeightLabel(item.selectedWeight.grams, item.selectedWeight.label)}</p>
                       <p className="text-sm font-bold text-amber-400 mt-1">₹{item.selectedWeight.price * item.quantity}</p>
                     </div>
                   </div>

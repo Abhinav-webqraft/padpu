@@ -75,8 +75,8 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <CartProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <CartProvider>
           <Suspense fallback={<div className="min-h-screen bg-[#0d0a05] flex items-center justify-center font-display text-xl text-amber-500/70 animate-pulse">Loading...</div>}>
             <Routes>
               {/* Login/Signup Routes */}
@@ -105,8 +105,8 @@ function App() {
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </Suspense>
-        </AuthProvider>
-      </CartProvider>
+        </CartProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

@@ -1,6 +1,7 @@
 import { X, Minus, Plus, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
+import { formatWeightLabel } from "../../utils/formatters";
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQuantity, subtotal, itemCount } = useCart();
@@ -85,26 +86,26 @@ export default function CartDrawer() {
                     <div className="flex justify-between items-start mb-1">
                       <p className="text-sm font-semibold text-white line-clamp-1 pr-2">{item.product.name}</p>
                       <button
-                        onClick={() => removeItem(item.productId, item.selectedWeight.label)}
+                        onClick={() => removeItem(item.productId, item.selectedWeight.label, item.selectedWeight.grams)}
                         className="text-gray-500 hover:text-red-400 transition-colors mt-0.5"
                         aria-label="Remove item"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                    <p className="text-xs text-amber-400/80 mb-3 uppercase tracking-wider">{item.selectedWeight.label}</p>
+                    <p className="text-xs text-amber-400/80 mb-3 uppercase tracking-wider">{formatWeightLabel(item.selectedWeight.grams, item.selectedWeight.label)}</p>
                     
                     <div className="flex items-center justify-between mt-auto">
                       <div className="flex items-center gap-3 bg-black/30 rounded-lg p-1 border border-white/5">
                         <button
-                          onClick={() => updateQuantity(item.productId, item.selectedWeight.label, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.productId, item.selectedWeight.label, item.selectedWeight.grams, item.quantity - 1)}
                           className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
                         <span className="text-sm text-white font-medium w-4 text-center">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.productId, item.selectedWeight.label, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.productId, item.selectedWeight.label, item.selectedWeight.grams, item.quantity + 1)}
                           className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
                         >
                           <Plus className="w-3 h-3" />

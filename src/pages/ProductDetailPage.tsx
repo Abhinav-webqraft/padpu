@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { products } from "../data/mockData";
 import { useCart } from "../context/CartContext";
 import { ShieldCheck, Truck, Droplet, Star, Minus, Plus, ShoppingCart, ArrowLeft, Leaf } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatWeightLabel } from "../utils/formatters";
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
@@ -13,14 +13,33 @@ export default function ProductDetailPage() {
   const [activeImage, setActiveImage] = useState(0);
   const [showAllReviews, setShowAllReviews] = useState(false);
   
-  const product = products.find((p) => p.slug === slug);
-  const [selectedWeight, setSelectedWeight] = useState(product?.weightOptions[0]);
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedWeight, setSelectedWeight] = useState<any>(null);
 
   useEffect(() => {
-    if (product && !selectedWeight) {
+    fetch('http://localhost:5000/api/products')
+      .then(res => res.json())
+      .then(data => {
+        const found = data.find((p: any) => p.slug === slug);
+        setProduct(found);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, [slug]);
+
+  useEffect(() => {
+    if (product && product.weightOptions && product.weightOptions.length > 0 && !selectedWeight) {
       setSelectedWeight(product.weightOptions[0]);
     }
   }, [product, selectedWeight]);
+
+  if (loading) {
+    return <div className="min-h-screen pt-24 pb-20 bg-stone-950 flex items-center justify-center text-white">Loading...</div>;
+  }
 
   if (!product || !selectedWeight) {
     return (
@@ -144,17 +163,17 @@ export default function ProductDetailPage() {
               <div>
                 <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Select Size</h3>
                 <div className="flex flex-wrap gap-3">
-                  {product.weightOptions.map((option) => (
+                  {product.weightOptions.map((option: any, index: number) => (
                     <button
-                      key={option.label}
+                      key={index}
                       onClick={() => setSelectedWeight(option)}
                       className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all duration-300 ${
-                        selectedWeight.label === option.label
+                        selectedWeight?.label === option.label && selectedWeight?.grams === option.grams
                           ? "border-amber-500 bg-amber-500/10 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
                           : "border-white/10 text-stone-300 hover:border-white/30 hover:bg-white/5 bg-stone-900/50 backdrop-blur-sm"
                       }`}
                     >
-                      {option.label} — ₹{option.price}
+                      {formatWeightLabel(option.grams, option.label)} — ₹{option.price}
                     </button>
                   ))}
                 </div>
