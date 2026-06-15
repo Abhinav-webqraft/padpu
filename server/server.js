@@ -57,6 +57,48 @@ app.delete('/api/categories/:name', async (req, res) => {
   }
 });
 
+// Gallery Routes
+app.get('/api/gallery', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM gallery ORDER BY created_at DESC');
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching gallery images:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/api/gallery', async (req, res) => {
+  try {
+    const { title, description, category, image } = req.body;
+    if (!title || !category || !image) {
+      return res.status(400).json({ message: 'Title, category, and image are required' });
+    }
+    const [result] = await pool.query(
+      'INSERT INTO gallery (title, description, category, image) VALUES (?, ?, ?, ?)',
+      [title, description, category, image]
+    );
+    
+    // Fetch and return the created image
+    const [rows] = await pool.query('SELECT * FROM gallery WHERE id = ?', [result.insertId]);
+    res.status(201).json(rows[0]);
+  } catch (error) {
+    console.error('Error adding gallery image:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.delete('/api/gallery/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM gallery WHERE id = ?', [id]);
+    res.json({ message: 'Gallery image deleted' });
+  } catch (error) {
+    console.error('Error deleting gallery image:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

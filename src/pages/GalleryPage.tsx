@@ -1,18 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { galleryImages } from '../data/mockData';
 import AnimatedSection from '../components/ui/AnimatedSection';
-
-const categories = ['All', 'Farm', 'Products', 'Bees', 'Harvest'];
 
 export default function GalleryPage() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [lightboxImg, setLightboxImg] = useState<null | { url: string; title: string; description: string }>(null);
+  const [images, setImages] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>(['All']);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/gallery')
+      .then(res => res.json())
+      .then(data => {
+        setImages(data.map((item: any) => ({
+          id: String(item.id),
+          url: item.image,
+          title: item.title,
+          description: item.description,
+          category: item.category
+        })));
+      })
+      .catch(err => console.error(err));
+
+    fetch('http://localhost:5000/api/categories')
+      .then(res => res.json())
+      .then(data => {
+        setCategories(['All', ...data]);
+      })
+      .catch(err => console.error(err));
+  }, []);
 
   const filtered = activeCategory === 'All'
-    ? galleryImages
-    : galleryImages.filter(img => img.category === activeCategory);
+    ? images
+    : images.filter(img => img.category === activeCategory);
 
   return (
     <div className="min-h-screen forest-bg relative overflow-hidden pb-24 md:pb-0">

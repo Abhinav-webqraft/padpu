@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import type { Product } from '../../types';
-import { Plus, Edit2, Trash2, Package, X, Check, Search, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Search, Upload } from 'lucide-react';
 
 const WEIGHT_LABELS = ['250g', '500g', '1kg', '3×250g', '3×500g', 'Complete Set'];
 

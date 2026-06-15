@@ -1,34 +1,86 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { galleryImages, categories as globalCategories } from '../../data/mockData';
 import type { GalleryImage } from '../../types';
 import { Plus, Trash2, X, Image as ImageIcon, Upload } from 'lucide-react';
 
 export default function AdminGalleryPage() {
-  const [images, setImages] = useState<GalleryImage[]>(galleryImages);
+  const [images, setImages] = useState<GalleryImage[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [lightbox, setLightbox] = useState<GalleryImage | null>(null);
-  const [newImage, setNewImage] = useState({ url: '', title: '', description: '', category: globalCategories[0] || 'Uncategorized' });
+  const [newImage, setNewImage] = useState({ url: '', title: '', description: '', category: '' });
 
-  const addImage = () => {
-    if (!newImage.url || !newImage.title) { alert('URL and title are required.'); return; }
-    setImages(prev => [
-      {
-        id: String(Date.now()),
-        url: newImage.url,
-        title: newImage.title,
-        description: newImage.description,
-        category: newImage.category,
-        order: prev.length + 1,
-      },
-      ...prev,
-    ]);
-    setNewImage({ url: '', title: '', description: '', category: globalCategories[0] || 'Uncategorized' });
-    setShowAdd(false);
+  useEffect(() => {
+    fetchImages();
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    if (categories.length > 0 && !newImage.category) {
+      setNewImage(p => ({ ...p, category: categories[0] }));
+    }
+  }, [categories]);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/categories');
+      const data = await res.json();
+      setCategories(data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const deleteImage = (id: string) => {
-    setImages(prev => prev.filter(img => img.id !== id));
+  const fetchImages = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/gallery');
+      const data = await res.json();
+      setImages(data.map((item: any) => ({
+        id: String(item.id),
+        url: item.image,
+        title: item.title,
+        description: item.description,
+        category: item.category
+      })));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const addImage = async () => {
+    if (!newImage.url || !newImage.title) { alert('Image and title are required.'); return; }
+    try {
+      const res = await fetch('http://localhost:5000/api/gallery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newImage.title,
+          description: newImage.description,
+          category: newImage.category,
+          image: newImage.url
+        })
+      });
+      if (res.ok) {
+        fetchImages();
+        setNewImage({ url: '', title: '', description: '', category: categories[0] || '' });
+        setShowAdd(false);
+      } else {
+        alert('Failed to add image');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteImage = async (id: string) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/gallery/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setImages(prev => prev.filter(img => img.id !== id));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -109,7 +161,11 @@ export default function AdminGalleryPage() {
                     onDrop={e => {
                       e.preventDefault();
                       if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                        setNewImage(p => ({ ...p, url: URL.createObjectURL(e.dataTransfer.files[0]) }));
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setNewImage(p => ({ ...p, url: reader.result as string }));
+                        };
+                        reader.readAsDataURL(e.dataTransfer.files[0]);
                       }
                     }}
                   >
@@ -133,7 +189,11 @@ export default function AdminGalleryPage() {
                       accept="image/*"
                       onChange={e => {
                         if (e.target.files && e.target.files[0]) {
-                          setNewImage(p => ({ ...p, url: URL.createObjectURL(e.target.files[0]) }));
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setNewImage(p => ({ ...p, url: reader.result as string }));
+                          };
+                          reader.readAsDataURL(e.target.files[0]);
                         }
                       }}
                     />
@@ -150,7 +210,7 @@ export default function AdminGalleryPage() {
                 <div>
                   <label className="block text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Category *</label>
                   <select value={newImage.category} onChange={e => setNewImage(p => ({ ...p, category: e.target.value }))} className="input-dark w-full">
-                    {globalCategories.map(c => <option key={c} value={c} className="bg-[#0f170c]">{c}</option>)}
+                    {categories.map(c => <option key={c} value={c} className="bg-[#0f170c]">{c}</option>)}
                   </select>
                 </div>
               </div>
