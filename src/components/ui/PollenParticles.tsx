@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 
-export default function PollenParticles() {
+export default function PollenParticles({ count = 30 }: { count?: number }) {
   const particles = useMemo(() => {
-    return Array.from({ length: 30 }).map((_, i) => ({
+    return Array.from({ length: count }).map((_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
       size: `${Math.random() * 4 + 2}px`,

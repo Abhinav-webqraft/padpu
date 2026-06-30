@@ -1,8 +1,35 @@
+import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { adminStats, revenueChartData, ordersChartData, mockOrders } from "../../data/mockData";
 import { TrendingUp, Users, ShoppingBag, AlertCircle, Package } from "lucide-react";
 
 export default function AdminDashboard() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/admin/dashboard')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success) setData(json.data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return <div className="p-8 pt-24 text-center text-white">Loading dashboard...</div>;
+  }
+
+  const { stats, recentOrders, revenueChartData, ordersChartData } = data || {
+    stats: { totalRevenue: 0, totalOrders: 0, pendingOrders: 0, lowStockProducts: 0 },
+    recentOrders: [],
+    revenueChartData: [],
+    ordersChartData: []
+  };
+
   return (
     <div className="p-6 lg:p-8 pt-20 lg:pt-8 bg-[#0d0a05] text-white min-h-screen">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -23,10 +50,10 @@ export default function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
-          { label: 'Total Revenue', value: `₹${adminStats.totalRevenue.toLocaleString()}`, icon: TrendingUp, color: 'text-green-400', bg: 'bg-green-400/10' },
-          { label: 'Total Orders', value: adminStats.totalOrders, icon: ShoppingBag, color: 'text-amber-400', bg: 'bg-amber-400/10' },
-          { label: 'Pending Orders', value: adminStats.pendingOrders, icon: AlertCircle, color: 'text-red-400', bg: 'bg-red-400/10' },
-          { label: 'Low Stock Items', value: adminStats.lowStockProducts, icon: Package, color: 'text-orange-400', bg: 'bg-orange-400/10' },
+          { label: 'Total Revenue', value: `₹${stats.totalRevenue.toLocaleString()}`, icon: TrendingUp, color: 'text-green-400', bg: 'bg-green-400/10' },
+          { label: 'Total Orders', value: stats.totalOrders, icon: ShoppingBag, color: 'text-amber-400', bg: 'bg-amber-400/10' },
+          { label: 'Pending Orders', value: stats.pendingOrders, icon: AlertCircle, color: 'text-red-400', bg: 'bg-red-400/10' },
+          { label: 'Low Stock Items', value: stats.lowStockProducts, icon: Package, color: 'text-orange-400', bg: 'bg-orange-400/10' },
         ].map((stat, i) => {
           const Icon = stat.icon;
           return (
@@ -109,7 +136,9 @@ export default function AdminDashboard() {
             </tr>
           </thead>
           <tbody>
-            {mockOrders.slice(0, 5).map((order) => (
+            {recentOrders.length === 0 ? (
+              <tr><td colSpan={5} className="text-center py-4 text-gray-500">No recent orders found</td></tr>
+            ) : recentOrders.map((order: any) => (
               <tr key={order.id}>
                 <td className="font-medium text-amber-500">{order.orderNumber}</td>
                 <td>
@@ -118,7 +147,7 @@ export default function AdminDashboard() {
                     <span className="text-xs text-gray-500">{order.customerEmail}</span>
                   </div>
                 </td>
-                <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                <td>{new Date(order.created_at).toLocaleDateString()}</td>
                 <td>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                     order.orderStatus === 'delivered' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
@@ -129,7 +158,7 @@ export default function AdminDashboard() {
                     {order.orderStatus.toUpperCase()}
                   </span>
                 </td>
-                <td className="font-bold text-white">₹{order.total.toFixed(2)}</td>
+                <td className="font-bold text-white">₹{Number(order.total).toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
