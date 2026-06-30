@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { TrendingUp, Users, ShoppingBag, AlertCircle, Package } from "lucide-react";
+import { TrendingUp, ShoppingBag, AlertCircle, Package } from "lucide-react";
 
 export default function AdminDashboard() {
   const [data, setData] = useState<any>(null);
