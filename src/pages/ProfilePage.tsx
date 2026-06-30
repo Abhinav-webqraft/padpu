@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { mockOrders } from '../data/mockData';
+import type { Order } from '../types';
 import { User, Package, Heart, LogOut, X, ChevronRight, MapPin, CreditCard, Edit2 } from 'lucide-react';
 
 type OrderStatus = 'confirmed' | 'processing' | 'packed' | 'dispatched' | 'delivered' | 'cancelled';
@@ -21,7 +21,9 @@ const STATUS_STEPS = ['confirmed', 'processing', 'packed', 'dispatched', 'delive
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [showOrders, setShowOrders] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<typeof mockOrders[0] | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [loadingOrders, setLoadingOrders] = useState(true);
 
   // Update Profile State
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -31,15 +33,33 @@ export default function ProfilePage() {
   const [updateSuccess, setUpdateSuccess] = useState('');
 
   const { logout, role, user, updateProfile } = useAuth();
+  
+  const userName = user?.name || 'Loading...';
+  const userEmail = user?.email || 'Loading...';
+
+  useEffect(() => {
+    if (user?.id) {
+      fetch(`http://localhost:5000/api/orders/my-orders?userId=${user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          setOrders(data);
+          setLoadingOrders(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoadingOrders(false);
+        });
+    } else {
+      setLoadingOrders(false);
+    }
+  }, [user]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const totalSpent = mockOrders.reduce((s, o) => s + o.total, 0);
-  const userName = user?.name || 'Loading...';
-  const userEmail = user?.email || 'Loading...';
+  const totalSpent = orders.reduce((s, o) => s + o.total, 0);
 
   const handleOpenUpdateModal = () => {
     if (user) {
@@ -129,7 +149,7 @@ export default function ProfilePage() {
           className="grid grid-cols-3 gap-3 mb-6"
         >
           {[
-            { label: 'Orders', value: mockOrders.length, icon: Package },
+            { label: 'Orders', value: orders.length, icon: Package },
             { label: 'Wishlist', value: '0', icon: Heart },
             { label: 'Total Spent', value: `₹${totalSpent.toFixed(0)}`, icon: CreditCard },
           ].map(({ label, value, icon: Icon }) => (
@@ -155,7 +175,7 @@ export default function ProfilePage() {
             </div>
             <div className="text-left">
               <p className="text-white font-semibold text-sm">My Orders</p>
-              <p className="text-gray-400 text-xs">{mockOrders.length} orders placed</p>
+              <p className="text-gray-400 text-xs">{loadingOrders ? 'Loading...' : `${orders.length} orders placed`}</p>
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
@@ -224,7 +244,11 @@ export default function ProfilePage() {
                 {!selectedOrder ? (
                   // Orders List
                   <div className="space-y-3">
-                    {mockOrders.map((order, i) => (
+                    {loadingOrders ? (
+                      <div className="text-center text-gray-400 py-8">Loading orders...</div>
+                    ) : orders.length === 0 ? (
+                      <div className="text-center text-gray-400 py-8">No orders found.</div>
+                    ) : orders.map((order, i) => (
                       <motion.button
                         key={order.id}
                         initial={{ opacity: 0, x: -10 }}
@@ -292,6 +316,22 @@ export default function ProfilePage() {
                       <div className="flex justify-between text-gray-400"><span>GST</span><span className="text-gray-200">₹{selectedOrder.tax.toFixed(0)}</span></div>
                       <div className="flex justify-between text-gray-400"><span>Shipping</span><span className="text-green-400">Free</span></div>
                       <div className="flex justify-between font-bold pt-2 border-t border-white/10"><span className="text-white">Total</span><span className="text-amber-400 text-base">₹{selectedOrder.total.toFixed(0)}</span></div>
+                    </div>
+
+                    {/* Payment Info */}
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CreditCard className="w-4 h-4 text-amber-500" />
+                        <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Payment Details</p>
+                      </div>
+                      <div className="flex justify-between items-center text-sm mb-1">
+                        <span className="text-gray-400">Method</span>
+                        <span className="text-gray-200 capitalize">{selectedOrder.paymentMethod === 'cod' ? 'Cash on Delivery' : selectedOrder.paymentMethod || 'Prepaid'}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-400">Status</span>
+                        <span className={`capitalize font-medium ${selectedOrder.paymentStatus === 'paid' ? 'text-green-400' : 'text-amber-400'}`}>{selectedOrder.paymentStatus || 'Pending'}</span>
+                      </div>
                     </div>
 
                     {/* Shipping */}

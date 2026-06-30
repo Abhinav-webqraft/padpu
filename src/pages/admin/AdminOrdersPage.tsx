@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { mockOrders } from '../../data/mockData';
 import type { Order } from '../../types';
 import { Package, X, Search, Filter, MapPin } from 'lucide-react';
 
@@ -18,15 +17,67 @@ const STATUS_STYLES: Record<OrderStatus, string> = {
 };
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const updateStatus = (orderId: string, newStatus: OrderStatus) => {
-    setOrders(prev =>
-      prev.map(o => o.id === orderId ? { ...o, orderStatus: newStatus, updatedAt: new Date().toISOString() } : o)
-    );
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/orders');
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const updateStatus = async (orderId: string, newStatus: OrderStatus) => {
+    if (!window.confirm(`Are you sure you want to change the status to ${newStatus}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (response.ok) {
+        setOrders(prev =>
+          prev.map(o => {
+            if (o.id === orderId) {
+              let newPaymentStatus = o.paymentStatus;
+              if (o.paymentMethod === 'cod') {
+                newPaymentStatus = newStatus === 'delivered' ? 'paid' : 'pending';
+              }
+              return { ...o, orderStatus: newStatus, paymentStatus: newPaymentStatus, updatedAt: new Date().toISOString() };
+            }
+            return o;
+          })
+        );
+        
+        // Update selectedOrder as well so modal updates instantly
+        if (selectedOrder && selectedOrder.id === orderId) {
+          let newPaymentStatus = selectedOrder.paymentStatus;
+          if (selectedOrder.paymentMethod === 'cod') {
+            newPaymentStatus = newStatus === 'delivered' ? 'paid' : 'pending';
+          }
+          setSelectedOrder(prev => prev ? { ...prev, orderStatus: newStatus, paymentStatus: newPaymentStatus, updatedAt: new Date().toISOString() } : null);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
   };
 
   const filtered = orders.filter(o => {
@@ -91,6 +142,12 @@ export default function AdminOrdersPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-semibold text-sm">{order.orderNumber}</p>
                   <p className="text-gray-400 text-xs mt-0.5">{order.customerName} · {order.customerEmail}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${order.paymentStatus === 'paid' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                      {order.paymentStatus}
+                    </span>
+                    <span className="text-[10px] text-gray-500 uppercase">{order.paymentMethod}</span>
+                  </div>
                 </div>
                 <div className="text-right">
                   <p className="text-amber-400 font-bold">₹{order.total.toFixed(0)}</p>
@@ -147,6 +204,15 @@ export default function AdminOrdersPage() {
                     <p className="text-white font-medium">{selectedOrder.customerName}</p>
                     <p className="text-gray-400 text-sm mt-1">{selectedOrder.customerEmail}</p>
                     <p className="text-gray-400 text-sm">{selectedOrder.customerPhone}</p>
+                    <div className="mt-3 pt-3 border-t border-white/10">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Payment</p>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${selectedOrder.paymentStatus === 'paid' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                          {selectedOrder.paymentStatus}
+                        </span>
+                        <span className="text-xs text-gray-300 uppercase">{selectedOrder.paymentMethod}</span>
+                      </div>
+                    </div>
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">

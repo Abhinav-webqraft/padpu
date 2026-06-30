@@ -16,11 +16,13 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 import productsRoutes from './routes/products.js';
 import cartRoutes from './routes/cart.js';
+import ordersRoutes from './routes/orders.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/orders', ordersRoutes);
 
 // Categories Routes
 app.get('/api/categories', async (req, res) => {

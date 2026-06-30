@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 import { CheckCircle, ArrowLeft, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
-import { addOrder } from "../data/mockData";
-import { Order } from "../types";
+
 import { formatWeightLabel } from "../utils/formatters";
 
 export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
+  const { user } = useAuth();
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const TAX_RATE = 0.06;
   const shippingCharge = subtotal >= 500 || subtotal === 0 ? 0 : 60;
@@ -17,44 +19,135 @@ export default function CheckoutPage() {
   const total = subtotal + tax + shippingCharge;
 
   const [form, setForm] = useState({
-    email: '', phone: '', fullName: '', line1: '', city: '', state: '', pincode: '', payment: 'card'
+    email: '', phone: '', fullName: '', line1: '', city: '', state: '', pincode: '', payment: 'razorpay'
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const newOrder: Order = {
-      id: `ord-${Date.now()}`,
-      orderNumber: `PF-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`,
-      customerName: form.fullName,
-      customerEmail: form.email,
-      customerPhone: form.phone,
-      items: items,
-      shippingAddress: {
-        fullName: form.fullName,
-        phone: form.phone,
-        line1: form.line1,
-        city: form.city,
-        state: form.state,
-        pincode: form.pincode
-      },
-      subtotal,
-      tax,
-      shippingCharge,
-      discount: 0,
-      total,
-      paymentStatus: 'paid',
-      paymentMethod: form.payment,
-      orderStatus: 'confirmed',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    setIsProcessing(true);
 
-    addOrder(newOrder);
+    try {
+      if (form.payment === 'cod') {
+        const res = await fetch('http://localhost:5000/api/orders/cod', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items, form, userId: user?.id })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setIsSuccess(true);
+          clearCart();
+          window.scrollTo(0, 0);
+        } else {
+          alert(data.message || 'Failed to place order');
+        }
+        setIsProcessing(false);
+        return;
+      }
+      // 1. Create order on backend
+      const res = await fetch('http://localhost:5000/api/orders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ items, form, userId: user?.id })
+      });
 
-    setIsSuccess(true);
-    clearCart();
-    window.scrollTo(0, 0);
+      const data = await res.json();
+
+      if (!data.success) {
+        alert(data.message || 'Failed to create order');
+        setIsProcessing(false);
+        return;
+      }
+
+      // 2. Initialize Razorpay Checkout
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'test_key', // Ensure this matches your Razorpay Key ID
+        amount: data.order.amount * 100, // amount in paise
+        currency: data.order.currency,
+        name: "Padpu Farms",
+        description: "Order Payment",
+        order_id: data.order.razorpay_order_id,
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI",
+                instruments: [
+                  {
+                    method: "upi",
+                    blocks: ["qr"]
+                  }
+                ]
+              }
+            },
+            sequence: ["block.upi", "block.cards", "block.netbanking"],
+            preferences: {
+              show_default_blocks: true
+            }
+          }
+        },
+        handler: async function (response: any) {
+          // 3. Verify Payment
+          try {
+            const verifyRes = await fetch('http://localhost:5000/api/orders/verify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                items,
+                form,
+                userId: user?.id
+              })
+            });
+
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              setIsSuccess(true);
+              clearCart();
+              window.scrollTo(0, 0);
+            } else {
+              alert('Payment verification failed. Please contact support.');
+            }
+          } catch (err) {
+            console.error('Verification error:', err);
+            alert('An error occurred while verifying the payment.');
+          } finally {
+            setIsProcessing(false);
+          }
+        },
+        prefill: {
+          name: form.fullName,
+          email: form.email,
+          contact: form.phone
+        },
+        theme: {
+          color: "#f59e0b"
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false);
+          }
+        }
+      };
+
+      const rzp1 = new (window as any).Razorpay(options);
+      rzp1.on('payment.failed', function (response: any) {
+        alert('Payment Failed: ' + response.error.description);
+        setIsProcessing(false);
+      });
+      rzp1.open();
+
+    } catch (err) {
+      console.error('Order creation error:', err);
+      alert('An error occurred. Please try again.');
+      setIsProcessing(false);
+    }
   };
 
   if (isSuccess) {
@@ -101,7 +194,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen forest-bg relative overflow-hidden pt-24 pb-24 md:pb-10">
+    <div className="min-h-screen forest-bg relative overflow-hidden pt-24 pb-36 md:pb-10">
       {/* Ambient orbs */}
       <div className="absolute top-[10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-amber-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[10%] right-[-10%] w-[400px] h-[400px] rounded-full bg-green-500/5 blur-[120px] pointer-events-none" />
@@ -126,11 +219,11 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Email Address</label>
-                    <input required type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} className="input-dark w-full" placeholder="you@example.com" />
+                    <input required type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} className="input-dark w-full" placeholder="you@example.com" />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Phone Number</label>
-                    <input required type="tel" value={form.phone} onChange={e => setForm(p => ({...p, phone: e.target.value}))} className="input-dark w-full" placeholder="+91 98765 43210" />
+                    <input required type="tel" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} className="input-dark w-full" placeholder="+91 98765 43210" />
                   </div>
                 </div>
               </div>
@@ -141,23 +234,23 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Full Name</label>
-                    <input required type="text" value={form.fullName} onChange={e => setForm(p => ({...p, fullName: e.target.value}))} className="input-dark w-full" />
+                    <input required type="text" value={form.fullName} onChange={e => setForm(p => ({ ...p, fullName: e.target.value }))} className="input-dark w-full" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Street Address</label>
-                    <input required type="text" value={form.line1} onChange={e => setForm(p => ({...p, line1: e.target.value}))} className="input-dark w-full" placeholder="House number and street name" />
+                    <input required type="text" value={form.line1} onChange={e => setForm(p => ({ ...p, line1: e.target.value }))} className="input-dark w-full" placeholder="House number and street name" />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">City</label>
-                    <input required type="text" value={form.city} onChange={e => setForm(p => ({...p, city: e.target.value}))} className="input-dark w-full" />
+                    <input required type="text" value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} className="input-dark w-full" />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">State</label>
-                    <input required type="text" value={form.state} onChange={e => setForm(p => ({...p, state: e.target.value}))} className="input-dark w-full" />
+                    <input required type="text" value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value }))} className="input-dark w-full" />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">PIN Code</label>
-                    <input required type="text" value={form.pincode} onChange={e => setForm(p => ({...p, pincode: e.target.value}))} className="input-dark w-full" />
+                    <input required type="text" value={form.pincode} onChange={e => setForm(p => ({ ...p, pincode: e.target.value }))} className="input-dark w-full" />
                   </div>
                 </div>
               </div>
@@ -167,8 +260,7 @@ export default function CheckoutPage() {
                 <h2 className="text-lg font-bold text-white mb-5 pb-3 border-b border-white/10">Payment Method</h2>
                 <div className="space-y-3">
                   {[
-                    { id: 'card', label: 'Credit / Debit Card (Mock)', defaultChecked: true },
-                    { id: 'upi', label: 'UPI / Netbanking', defaultChecked: false },
+                    { id: 'razorpay', label: 'Online Payment (UPI, Cards, Netbanking)', defaultChecked: true },
                     { id: 'cod', label: 'Cash on Delivery', defaultChecked: false },
                   ].map(opt => (
                     <label
@@ -176,7 +268,7 @@ export default function CheckoutPage() {
                       className="flex items-center p-4 rounded-xl cursor-pointer border transition-all hover:border-amber-500/30 hover:bg-amber-500/5"
                       style={{ borderColor: 'rgba(255,255,255,0.08)' }}
                     >
-                      <input type="radio" name="payment" value={opt.id} checked={form.payment === opt.id} onChange={e => setForm(p => ({...p, payment: e.target.value}))} className="w-4 h-4 accent-amber-500" />
+                      <input type="radio" name="payment" value={opt.id} checked={form.payment === opt.id} onChange={e => setForm(p => ({ ...p, payment: e.target.value }))} className="w-4 h-4 accent-amber-500" />
                       <span className="ml-3 font-medium text-gray-200 text-sm">{opt.label}</span>
                     </label>
                   ))}
@@ -229,9 +321,10 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 form="checkout-form"
-                className="w-full py-4 rounded-2xl amber-gradient text-stone-900 font-bold hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all hover:scale-[1.01] flex items-center justify-center gap-2"
+                disabled={isProcessing}
+                className="w-full py-4 rounded-2xl amber-gradient text-stone-900 font-bold hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all hover:scale-[1.01] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ShieldCheck className="w-5 h-5" /> Place Order
+                <ShieldCheck className="w-5 h-5" /> {isProcessing ? 'Processing...' : 'Place Order'}
               </button>
             </div>
           </div>
