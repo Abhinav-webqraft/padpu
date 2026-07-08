@@ -5,10 +5,10 @@ import PollenParticles from '../components/ui/PollenParticles';
 import { galleryImages } from '../data/mockData';
 
 const timeline = [
-  { year: '2010', title: 'The Beginning', desc: 'Our founder started with just 5 beehives in a small village in Himachal Pradesh, inspired by generations of traditional beekeeping.' },
-  { year: '2016', title: 'Going Organic', desc: 'Achieved organic certification. All our practices aligned with sustainable, chemical-free beekeeping.' },
-  { year: '2023', title: 'Himalayan Forest Honey', desc: 'Introduced our most prized product — Himalayan Forest Honey from wild bee colonies in protected forest areas.' },
-  { year: '2026', title: 'Today', desc: 'Over 1 million jars delivered. 200+ hives. A family growing with yours.' },
+  { year: '1983', title: 'A Single Colony', desc: 'Padpu Farms began with one honey bee colony of the native Apis cerana species in Dakshina Kannada District, Karnataka.' },
+  { year: '1992-93', title: 'A Difficult Pause', desc: 'A severe disease outbreak devastated the apiary after it grew to around 75 colonies, forcing a long and painful break.' },
+  { year: '2003', title: 'Starting Again', desc: 'We restarted with just one bee box and slowly rebuilt the farm through patience, learning, and care.' },
+  { year: '2017', title: 'Padpu Farms Brand', desc: 'The Padpu Farms brand was created to bring authentic natural honey directly from the farm to consumers.' },
 ];
 
 const team = [
@@ -39,10 +39,10 @@ const team = [
 ];
 
 const values = [
-  { emoji: '🌿', title: 'Purity First', desc: 'We never compromise. No additives, no heating, no shortcuts.' },
-  { emoji: '🐝', title: 'Bee Welfare', desc: 'Happy bees make better honey. Our colonies are treated with care.' },
-  { emoji: '🌍', title: 'Sustainability', desc: 'From packaging to practices, we minimize our footprint.' },
-  { emoji: '❤️', title: 'Community', desc: 'Supporting local farmers and families who work alongside us.' },
+  { emoji: '🌿', title: 'Pure & Natural', desc: 'We harvest honey using traditional methods that protect its natural goodness.' },
+  { emoji: '🐝', title: 'Bee-Centred Care', desc: 'Our work starts with the bees, pollination, biodiversity, and a healthy ecosystem.' },
+  { emoji: '🌍', title: 'Western Ghats Origin', desc: 'Our bees thrive across areca, coconut, rubber, paddy, pepper, medicinal, and fruit-rich landscapes.' },
+  { emoji: '❤️', title: 'Direct From Nature', desc: 'We connect farmers and consumers with honest honey from the land that produces it.' },
 ];
 
 export default function AboutPage() {
@@ -116,10 +116,9 @@ export default function AboutPage() {
         >
           <div className="glass p-10 md:p-14 border border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.15)]">
             <p className="font-display text-xl md:text-3xl text-white leading-relaxed italic">
-              "Our mission is simple: to bring the purest, most delicious honey from our hives to your home —
-              with complete transparency, respect for nature, and love for our craft."
+              "Padpu Farms is a journey of resilience, tradition, and pure natural honey — from one bee colony in 1983 to a trusted brand built on patience and care."
             </p>
-            <p className="text-amber-500 font-semibold mt-6 md:text-lg">— Ramesh Padpu, Founder</p>
+            <p className="text-amber-500 font-semibold mt-6 md:text-lg">— Padpu Farms</p>
           </div>
         </motion.div>
       </section>
@@ -137,11 +136,11 @@ export default function AboutPage() {
             ✦ Our Story ✦
           </span>
           <h1 className="font-display font-bold text-white mb-5" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}>
-            Born from Nature,<br />
-            <span className="amber-gradient-text">Built with Love</span>
+            A Journey from Nature,<br />
+            <span className="amber-gradient-text">to Your Table</span>
           </h1>
           <p className="text-gray-400 font-light text-lg max-w-xl mx-auto">
-            A family farm in the Himalayan foothills, producing India's finest pure honey since 2010.
+            Padpu Farms began in 1983 in Dakshina Kannada and continues to share 100% pure, natural honey grown with care, resilience, and respect for nature.
           </p>
         </motion.div>
       </section>
@@ -153,7 +152,7 @@ export default function AboutPage() {
             <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest text-amber-500 border border-amber-500/20 bg-amber-500/10 uppercase mb-4 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
               ✦ Our Journey ✦
             </span>
-            <h2 className="font-display font-bold text-3xl md:text-4xl text-white">15+ Years of Pure Honey</h2>
+            <h2 className="font-display font-bold text-3xl md:text-4xl text-white">Decades of Resilience and Pure Honey</h2>
           </AnimatedSection>
 
           <div className="relative grid auto-rows-fr" ref={timelineRef}>
@@ -287,7 +286,7 @@ export default function AboutPage() {
             <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest text-amber-500 border border-amber-500/20 bg-amber-500/10 uppercase mb-4 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
               ✦ Our Team ✦
             </span>
-            <h2 className="font-display font-bold text-3xl md:text-4xl text-white">The Faces Behind the Farm</h2>
+            <h2 className="font-display font-bold text-3xl md:text-4xl text-white">The People Behind Padpu Farms</h2>
           </AnimatedSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {team.map((member, i) => (
@@ -315,7 +314,7 @@ export default function AboutPage() {
       <section className="py-20 relative z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection className="text-center mb-10">
-            <h2 className="font-display font-bold text-3xl text-white">Life on the Farm</h2>
+            <h2 className="font-display font-bold text-3xl text-white">Life in the Western Ghats</h2>
           </AnimatedSection>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 lg:gap-6">
             {galleryImages.slice(0, 6).map((img, i) => (

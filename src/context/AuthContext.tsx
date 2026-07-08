@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [role, setRole] = useState<Role>(localStorage.getItem('userRole') as Role);
   const [user, setUser] = useState<UserProfile | null>(null);
+  const HERO_INTRO_SEEN_KEY = 'padpuHeroIntroSeen';
 
   // Fetch profile when token changes
   useEffect(() => {
@@ -100,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
+    sessionStorage.removeItem(HERO_INTRO_SEEN_KEY);
   };
 
   return (
