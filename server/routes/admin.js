@@ -64,4 +64,37 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
+router.get('/messages', async (req, res) => {
+  try {
+    const [messages] = await pool.query('SELECT * FROM messages ORDER BY created_at DESC');
+    res.json({ success: true, data: messages });
+  } catch (error) {
+    console.error('Error fetching admin messages:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.put('/messages/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    await pool.query('UPDATE messages SET status = ? WHERE id = ?', [status, id]);
+    res.json({ success: true, message: 'Message status updated' });
+  } catch (error) {
+    console.error('Error updating message status:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.delete('/messages/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM messages WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Message deleted' });
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 export default router;

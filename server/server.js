@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import pool from './db.js';
+import { verifyToken } from './middleware/auth.js';
 
 dotenv.config();
 
@@ -101,6 +102,28 @@ app.delete('/api/gallery/:id', async (req, res) => {
     res.json({ message: 'Gallery image deleted' });
   } catch (error) {
     console.error('Error deleting gallery image:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Contact Route
+app.post('/api/contact', verifyToken, async (req, res) => {
+  try {
+    const { name, emailOrPhone, subject, message } = req.body;
+    const userId = req.user.id;
+    
+    if (!name || !emailOrPhone || !message) {
+      return res.status(400).json({ message: 'Name, Email/Phone, and Message are required' });
+    }
+
+    await pool.query(
+      'INSERT INTO messages (user_id, name, email_or_phone, subject, message) VALUES (?, ?, ?, ?, ?)',
+      [userId, name, emailOrPhone, subject, message]
+    );
+    
+    res.status(201).json({ message: 'Message saved successfully' });
+  } catch (error) {
+    console.error('Error saving contact message:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

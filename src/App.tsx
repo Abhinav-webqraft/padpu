@@ -22,6 +22,7 @@ const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'));
 const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
 const AdminGalleryPage = lazy(() => import('./pages/admin/AdminGalleryPage'));
+const AdminMessagesPage = lazy(() => import('./pages/admin/AdminMessagesPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
 // ScrollToTop component to reset window scroll position on route change
@@ -102,6 +103,7 @@ function App() {
               <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProductsPage /></ProtectedAdminRoute>} />
               <Route path="/admin/categories" element={<ProtectedAdminRoute><AdminCategoriesPage /></ProtectedAdminRoute>} />
               <Route path="/admin/gallery" element={<ProtectedAdminRoute><AdminGalleryPage /></ProtectedAdminRoute>} />
+              <Route path="/admin/messages" element={<ProtectedAdminRoute><AdminMessagesPage /></ProtectedAdminRoute>} />
 
               {/* Catch-all to redirect to login */}
               <Route path="*" element={<Navigate to="/login" replace />} />

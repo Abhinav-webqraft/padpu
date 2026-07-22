@@ -1,16 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Send, MessageCircle } from 'lucide-react';
 import AnimatedSection from '../components/ui/AnimatedSection';
+import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
+  const { role, user, token } = useAuth();
+  const [formData, setFormData] = useState({ name: '', emailOrPhone: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || '',
+        emailOrPhone: user.email || user.phonenumber || '',
+      }));
+    }
+  }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => { setSubmitted(false); setFormData({ name: '', email: '', subject: '', message: '' }); }, 3000);
+    if (!token) return;
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      const res = await fetch('http://localhost:5000/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      if (!res.ok) throw new Error('Failed to send message');
+      
+      setSubmitted(true);
+      setTimeout(() => { 
+        setSubmitted(false); 
+        setFormData(prev => ({ ...prev, subject: '', message: '' })); 
+      }, 3000);
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -60,6 +99,18 @@ export default function ContactPage() {
                   <h3 className="font-display font-bold text-xl text-white mb-2">Message Sent!</h3>
                   <p className="text-gray-400 text-sm">We'll get back to you within 24 hours.</p>
                 </motion.div>
+              ) : !role ? (
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-4">🔒</div>
+                  <h3 className="font-display font-bold text-xl text-white mb-2">Login Required</h3>
+                  <p className="text-gray-400 text-sm mb-6">You must be logged in to send us a message.</p>
+                  <Link
+                    to="/login"
+                    className="inline-block px-6 py-3 bg-amber-500 hover:bg-amber-400 text-[#0d0a05] text-sm font-semibold rounded-xl transition-colors"
+                  >
+                    Login / Signup
+                  </Link>
+                </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid sm:grid-cols-2 gap-4">
@@ -75,13 +126,13 @@ export default function ContactPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide">Email Address</label>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide">Email or Phone</label>
                       <input
-                        type="email"
+                        type="text"
                         required
-                        placeholder="john@example.com"
-                        value={formData.email}
-                        onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
+                        placeholder="john@example.com or 9876543210"
+                        value={formData.emailOrPhone}
+                        onChange={e => setFormData(f => ({ ...f, emailOrPhone: e.target.value }))}
                         className="w-full px-4 py-3 rounded-xl bg-black/20 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all"
                       />
                     </div>
@@ -107,13 +158,17 @@ export default function ContactPage() {
                       className="w-full px-4 py-3 rounded-xl bg-black/20 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
                     />
                   </div>
+                  {error && (
+                    <p className="text-red-400 text-xs text-center">{error}</p>
+                  )}
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     type="submit"
-                    className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-stone-900 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all amber-gradient"
+                    disabled={isSubmitting}
+                    className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-stone-900 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all amber-gradient disabled:opacity-50"
                   >
                     <Send className="w-4 h-4" />
-                    Send Message
+                    {isSubmitting ? 'Sending...' : 'Send Message'}
                   </motion.button>
                 </form>
               )}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, ShoppingBag, Package, Image as ImageIcon,
-  Leaf, Menu, X, LogOut,
+  Leaf, Menu, X, LogOut, MessageCircle
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
@@ -12,6 +12,7 @@ const navItems = [
   { href: "/admin/products", label: "Products", Icon: Package },
   { href: "/admin/categories", label: "Categories", Icon: Leaf },
   { href: "/admin/gallery", label: "Gallery", Icon: ImageIcon },
+  { href: "/admin/messages", label: "Messages", Icon: MessageCircle },
 ];
 
 export default function AdminSidebar() {
