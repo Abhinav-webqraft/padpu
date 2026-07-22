@@ -30,7 +30,7 @@ const features = [
   {
     icon: Sprout,
     title: "Direct from Farms",
-    description: "From our mountain hives to your table, cutting out all middlemen.",
+    description: "From our Western Ghats apiary to your table, cutting out all middlemen.",
   },
 ];
 

@@ -148,8 +148,8 @@ export default function ContactPage() {
                 {
                   icon: MapPin,
                   label: 'Farm Address',
-                  value: 'Padpu Village, Kangra District',
-                  sub: 'Himachal Pradesh — 176 001, India',
+                  value: 'Padpu Farms, Dakshina Kannada',
+                  sub: 'Karnataka, India',
                   color: 'text-green-400 bg-green-400/10 border-green-400/20',
                 },
               ].map(({ icon: Icon, label, value, sub, color }) => (

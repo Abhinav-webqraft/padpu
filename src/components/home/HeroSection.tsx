@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ShieldCheck, Truck, ChevronDown } from "lucide-react";
+import { ArrowRight, ShieldCheck, Truck } from "lucide-react";
 import { motion } from "framer-motion";
 
 // Scroll animation image sequence:
@@ -22,23 +22,15 @@ const ALL_FRAMES = [
 const TOTAL_FRAMES = ALL_FRAMES.length;
 
 export default function HeroSection() {
-  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const scrollIndicatorRef = useRef<HTMLDivElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const currentFrameRef = useRef(0);
   const targetFrameRef = useRef(0);
-
-  const text1Ref = useRef<HTMLDivElement>(null);
-  const text2Ref = useRef<HTMLDivElement>(null);
-  const text3Ref = useRef<HTMLDivElement>(null);
-  const landingTextRef = useRef<HTMLDivElement>(null);
-
-  const scrollProgressRef = useRef(0);
   const [loadProgress, setLoadProgress] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const [logoVisible, setLogoVisible] = useState(true);
+  const [introComplete, setIntroComplete] = useState(false);
 
   // Draw a single frame on the canvas with cover-fit
   const drawFrame = useCallback((index: number) => {
@@ -214,67 +206,11 @@ export default function HeroSection() {
       }
       currentFrameRef.current = next;
 
-      // Update text overlay opacity
-      const progress = scrollProgressRef.current;
-
-      const updateIntermediateText = (ref: React.RefObject<HTMLDivElement>, start: number, end: number) => {
-        if (!ref.current) return;
-        const mid = (start + end) / 2;
-        let opacity = 0;
-        let translateY = 40;
-        
-        if (progress >= start && progress <= end) {
-          if (progress < mid) {
-            const p = (progress - start) / (mid - start);
-            const easeP = p * (2 - p); // ease out
-            opacity = Math.min(1, easeP * 1.5); // Peak opacity 1
-            translateY = 40 * (1 - easeP);
-          } else {
-            const p = (end - progress) / (end - mid);
-            const easeP = p * p; // ease in
-            opacity = Math.min(1, easeP * 1.5);
-            translateY = -40 * (1 - easeP);
-          }
-        } else if (progress > end) {
-            translateY = -40;
-        }
-        
-        ref.current.style.opacity = String(opacity);
-        ref.current.style.transform = `translateY(${translateY}px)`;
-      };
-
-      // The scroll frames map progress from 0.0 to 0.85 roughly
-      updateIntermediateText(text1Ref, 0.08, 0.26);
-      updateIntermediateText(text2Ref, 0.30, 0.48);
-      updateIntermediateText(text3Ref, 0.52, 0.70);
-
       if (overlayRef.current) {
-        let textOpacity = 0;
-        if (progress > 0.75) {
-          // Fade in from 75% to 85%
-          textOpacity = Math.min(1, (progress - 0.75) / 0.10);
-        }
+        const textOpacity = introComplete ? 1 : 0;
         overlayRef.current.style.opacity = String(textOpacity);
-        // Slide up gently as it appears
-        const translateY = progress > 0.75 ? (1 - Math.min(1, (progress - 0.75) / 0.10)) * 40 : 40;
+        const translateY = introComplete ? 0 : 40;
         overlayRef.current.style.transform = `translateY(${translateY}px)`;
-      }
-
-      // Landing text fades out as soon as scroll begins
-      if (landingTextRef.current) {
-        // Opacity is 1 until progress 0.02, then fades to 0 by 0.08
-        const landingOpacity = progress < 0.02 ? 1 : Math.max(0, 1 - (progress - 0.02) / 0.06);
-        // Slide up slightly as it fades out
-        const landingY = progress < 0.02 ? 0 : -(progress - 0.02) * 200;
-        landingTextRef.current.style.opacity = String(landingOpacity);
-        landingTextRef.current.style.transform = `translateY(${landingY}px)`;
-      }
-
-      // Hide scroll indicator once scrolling begins
-      if (scrollIndicatorRef.current) {
-        const indicatorOpacity =
-          progress < 0.03 ? 1 : Math.max(0, 1 - (progress - 0.03) / 0.05);
-        scrollIndicatorRef.current.style.opacity = String(indicatorOpacity);
       }
 
       requestAnimationFrame(tick);
@@ -285,63 +221,58 @@ export default function HeroSection() {
     return () => {
       running = false;
     };
-  }, [isLoaded, drawBlendedFrame]);
+  }, [isLoaded, drawBlendedFrame, introComplete]);
 
-  // Handle scroll — map scroll progress to frame index
+  // Play the intro once on load, then hold the end image statically.
   useEffect(() => {
     if (!isLoaded) return;
 
-    const handleScroll = () => {
-      const container = containerRef.current;
-      if (!container) return;
+    let rafId = 0;
+    const introDuration = 6200;
+    const startTime = performance.now();
 
-      const rect = container.getBoundingClientRect();
-      const scrollableHeight = container.offsetHeight - window.innerHeight;
-      const scrolled = -rect.top;
-      const progress = Math.max(0, Math.min(1, scrolled / scrollableHeight));
+    const mapIntroProgressToFrame = (progress: number) => {
+      const clamped = Math.max(0, Math.min(1, progress));
+      const slowStartFrame = 15;
+      const slowEndFrame = 35;
 
-      scrollProgressRef.current = progress;
-
-      // Map scroll progress to frames:
-      // progress 0.0       → frame 0 (landing image — stays visible initially)
-      // progress 0.0-0.85  → frames 0 through TOTAL_FRAMES-2 (landing → scroll frames)
-      // progress 0.85-1.0  → frame TOTAL_FRAMES-1 (end image — holds before product section)
-
-      const SCROLL_END = 0.85; // When to reach the end image
-      if (progress <= SCROLL_END) {
-        const p = progress / SCROLL_END;
-        let targetIdx = 0;
-        
-        // Piecewise mapping to slow down frames 19 to 87 (indices 20 to 88)
-        // We give them 70% of the entire scrolling space (p from 0.10 to 0.80)
-        
-        if (p <= 0.10) {
-          // p: 0.0 -> 0.10 maps to indices 0 -> 20
-          targetIdx = (p / 0.10) * 20;
-        } else if (p <= 0.80) {
-          // p: 0.10 -> 0.80 maps to indices 20 -> 88
-          const segmentP = (p - 0.10) / 0.70;
-          targetIdx = 20 + segmentP * 68; // (88 - 20)
-        } else {
-          // p: 0.80 -> 1.0 maps to indices 88 -> end
-          const segmentP = (p - 0.80) / 0.20;
-          targetIdx = 88 + segmentP * (TOTAL_FRAMES - 1 - 88);
-        }
-
-        targetFrameRef.current = Math.min(TOTAL_FRAMES - 1, targetIdx);
-      } else {
-        // Hold on end image
-        targetFrameRef.current = TOTAL_FRAMES - 1;
+      if (clamped < 0.12) {
+        return (clamped / 0.12) * slowStartFrame;
       }
+
+      if (clamped < 0.48) {
+        const segmentProgress = (clamped - 0.12) / 0.36;
+        const eased = segmentProgress * segmentProgress * (3 - 2 * segmentProgress);
+        return slowStartFrame + eased * (slowEndFrame - slowStartFrame);
+      }
+
+      const tailProgress = (clamped - 0.48) / 0.52;
+      const tailEase = 1 - Math.pow(1 - tailProgress, 2);
+      return slowEndFrame + tailEase * ((TOTAL_FRAMES - 1) - slowEndFrame);
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+    const playIntro = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / introDuration);
+      targetFrameRef.current = mapIntroProgressToFrame(progress);
+
+      if (progress < 1) {
+        rafId = requestAnimationFrame(playIntro);
+        return;
+      }
+
+      targetFrameRef.current = TOTAL_FRAMES - 1;
+      currentFrameRef.current = TOTAL_FRAMES - 1;
+      drawFrame(TOTAL_FRAMES - 1);
+      setIntroComplete(true);
+    };
+
+    rafId = requestAnimationFrame(playIntro);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      cancelAnimationFrame(rafId);
     };
-  }, [isLoaded]);
+  }, [isLoaded, drawFrame]);
 
   // Handle resize
   useEffect(() => {
@@ -354,9 +285,8 @@ export default function HeroSection() {
 
   return (
     <section
-      ref={containerRef}
       className="relative"
-      style={{ height: "1000vh" }}
+      style={{ height: "100vh" }}
     >
       {/* Loading screen */}
       {!isLoaded && (
@@ -384,8 +314,7 @@ export default function HeroSection() {
         </div>
       )}
 
-      {/* Sticky viewport — stays pinned until all frames have scrolled through */}
-      <div className="sticky top-0 left-0 w-full h-screen overflow-hidden">
+      <div className="relative w-full h-screen overflow-hidden">
         {/* Canvas for frame animation */}
         <canvas
           ref={canvasRef}
@@ -428,45 +357,13 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Intermediate Text 1 */}
-        <div
-          ref={text1Ref}
-          className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
-          style={{ opacity: 0, transform: "translateY(40px)", willChange: "transform, opacity" }}
-        >
-          <IntermediateText title="100% Raw & Unfiltered." subtitle="Straight from the deep forest to your table." />
-        </div>
-
-        {/* Intermediate Text 2 */}
-        <div
-          ref={text2Ref}
-          className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
-          style={{ opacity: 0, transform: "translateY(40px)", willChange: "transform, opacity" }}
-        >
-          <IntermediateText title="Ethically Harvested." subtitle="Respecting nature's delicate balance." />
-        </div>
-
-        {/* Intermediate Text 3 */}
-        <div
-          ref={text3Ref}
-          className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
-          style={{ opacity: 0, transform: "translateY(40px)", willChange: "transform, opacity" }}
-        >
-          <IntermediateText title="Rich in Antioxidants." subtitle="Nature's pure, liquid gold." />
-        </div>
-
         {/* Hero text content — fades in on the end image */}
         <div
           ref={overlayRef}
           className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
-          style={{ opacity: 0, transition: "opacity 0.15s ease-out, transform 0.15s ease-out", willChange: "transform, opacity" }}
+          style={{ opacity: introComplete ? 1 : 0, transition: "opacity 0.15s ease-out, transform 0.15s ease-out", willChange: "transform, opacity" }}
         >
           <HeroOverlayContent />
-        </div>
-
-        {/* Scroll indicator */}
-        <div ref={scrollIndicatorRef} style={{ transition: "opacity 0.2s ease-out" }}>
-          <ScrollIndicator />
         </div>
 
         {/* Bottom gradient fade into next section */}
@@ -555,38 +452,3 @@ function HeroOverlayContent() {
   );
 }
 
-/** Animated scroll indicator */
-function ScrollIndicator() {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 2, duration: 1 }}
-      className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2"
-    >
-      <span className="text-white/50 text-xs tracking-[0.3em] uppercase font-light">
-        Scroll to explore
-      </span>
-      <motion.div
-        animate={{ y: [0, 8, 0] }}
-        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <ChevronDown className="w-5 h-5 text-amber-400/70" />
-      </motion.div>
-    </motion.div>
-  );
-}
-
-function IntermediateText({ title, subtitle }: { title: string, subtitle: string }) {
-  return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 w-full text-center">
-      <h2 className="font-display text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 leading-tight drop-shadow-[0_4px_30px_rgba(0,0,0,0.8)]">
-        <span className="amber-gradient-text">{title.split(' ')[0]}</span>{" "}
-        {title.split(' ').slice(1).join(' ')}
-      </h2>
-      <p className="text-xl sm:text-2xl text-white/90 font-light drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}

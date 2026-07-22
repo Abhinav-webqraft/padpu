@@ -74,16 +74,22 @@ export default function AboutSection() {
             className="text-white"
           >
             <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-[1.1]">
-              Crafted by <span className="amber-gradient-text">Nature</span>,{" "}
+              A Journey from <span className="amber-gradient-text">Nature</span>,{" "}
               <br />
-              Nurtured by Us.
+              to Your Table.
             </h2>
 
             <div className="space-y-5 text-gray-400 text-lg font-light leading-relaxed mb-10">
               <p>
-                Our bees forage freely across wild meadows untouched by modern
-                agriculture. The result is honey exactly as nature intended —
-                raw, unpasteurised, and vibrating with natural enzymes.
+                Padpu Farms began in 1983 with a single native Apis cerana colony in
+                Dakshina Kannada District, Karnataka. From there, the farm grew through
+                patience, resilience, and a deep respect for traditional beekeeping.
+              </p>
+              <p>
+                Today, we harvest 100% pure, natural honey from the rich biodiversity
+                of the Western Ghats — across areca, coconut, rubber, paddy, pepper,
+                medicinal, and exotic fruit landscapes — and bring it directly from
+                nature to your table.
               </p>
             </div>
 
@@ -95,20 +101,12 @@ export default function AboutSection() {
               }}
             >
               <div>
-                <p className="text-3xl font-display font-bold text-amber-400 mb-1">
-                  50+
-                </p>
-                <p className="text-sm text-gray-400 uppercase tracking-wider text-xs">
-                  Floral Varieties
-                </p>
+                <p className="text-3xl font-display font-bold text-amber-400 mb-1">1983</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wider text-xs">Our Beginning</p>
               </div>
               <div>
-                <p className="text-3xl font-display font-bold text-amber-400 mb-1">
-                  1M+
-                </p>
-                <p className="text-sm text-gray-400 uppercase tracking-wider text-xs">
-                  Happy Homes
-                </p>
+                <p className="text-3xl font-display font-bold text-amber-400 mb-1">Pure</p>
+                <p className="text-sm text-gray-400 uppercase tracking-wider text-xs">Natural Honey</p>
               </div>
             </div>
           </motion.div>

@@ -17,7 +17,7 @@ export default function Footer() {
               <img src="/logo.png" alt="Padpu Farms" className="h-16 w-auto object-contain" />
             </div>
             <p className="text-gray-400 text-sm leading-relaxed max-w-sm mb-6">
-              Pure, raw, farm-sourced honey straight to your doorstep. Crafted with traditional methods and deep respect for nature.
+              Pure, raw, farm-sourced honey from Padpu Farms in Karnataka, crafted with traditional methods and deep respect for nature.
             </p>
             <div className="flex gap-4">
               <a href="#" className="w-10 h-10 rounded-full glass flex items-center justify-center text-amber-200 hover:text-white hover:border-amber-400/50 transition-all">
@@ -71,7 +71,7 @@ export default function Footer() {
               </div>
               <div className="flex gap-3 items-start">
                 <MapPin className="w-4 h-4 flex-shrink-0 mt-1 text-amber-500" />
-                <span>Solan Valley,<br/>Himachal Pradesh, India</span>
+                <span>Dakshina Kannada District,<br/>Karnataka, India</span>
               </div>
             </div>
           </div>
