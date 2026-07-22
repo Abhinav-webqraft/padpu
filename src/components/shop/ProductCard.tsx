@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ShoppingCart, Heart } from "lucide-react";
 import { useCart } from "../../context/CartContext";
+import { useAuth } from "../../context/AuthContext";
 import { useState } from "react";
 import { Product } from "../../types";
 import { formatWeightLabel } from "../../utils/formatters";
@@ -12,6 +13,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const { addItem } = useCart();
+  const { role } = useAuth();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const defaultWeight = product.weightOptions[0];
 
@@ -51,7 +53,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
       )}
 
       {/* Image */}
-      <Link to={`/shop/${product.slug}`} className="relative h-64 overflow-hidden block" style={{ background: "rgba(255, 255, 255, 0.03)" }}>
+      <Link to={role ? `/shop/${product.slug}` : "/login"} className="relative h-64 overflow-hidden block" style={{ background: "rgba(255, 255, 255, 0.03)" }}>
         <img
           src={product.images[0]}
           alt={product.name}
@@ -61,8 +63,8 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         
         {/* Quick View Overlay (Desktop) */}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:flex items-center justify-center">
-          <span className="bg-amber-500 text-stone-900 text-sm font-semibold py-2 px-6 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-            Quick View
+          <span className="bg-amber-500 text-stone-900 text-sm font-semibold py-2 px-6 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 text-center max-w-[80%] leading-tight">
+            {role ? "Quick View" : "Login to see full details"}
           </span>
         </div>
 
@@ -85,7 +87,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
 
       {/* Content */}
       <div className="p-5 flex flex-col flex-grow">
-        <Link to={`/shop/${product.slug}`} className="block mb-2 group-hover:text-amber-400 transition-colors">
+        <Link to={role ? `/shop/${product.slug}` : "/login"} className="block mb-2 group-hover:text-amber-400 transition-colors">
           <h3 className="font-semibold text-white line-clamp-1">{product.name}</h3>
         </Link>
         
@@ -108,13 +110,22 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
             <span className="text-lg font-bold text-white">₹{defaultWeight.price}</span>
           </div>
           
-          <button
-            onClick={handleAddToCart}
-            className="w-10 h-10 rounded-full amber-gradient text-stone-900 flex items-center justify-center hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all hover:scale-110"
-            aria-label="Add to cart"
-          >
-            <ShoppingCart className="w-4 h-4" />
-          </button>
+          {role ? (
+            <button
+              onClick={handleAddToCart}
+              className="w-10 h-10 rounded-full amber-gradient text-stone-900 flex items-center justify-center hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all hover:scale-110"
+              aria-label="Add to cart"
+            >
+              <ShoppingCart className="w-4 h-4" />
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="text-[10px] font-bold text-amber-500 uppercase hover:text-amber-400 transition-colors text-right leading-tight max-w-[80px]"
+            >
+              Login for details
+            </Link>
+          )}
         </div>
       </div>
     </div>

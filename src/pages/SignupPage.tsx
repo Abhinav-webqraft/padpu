@@ -44,7 +44,7 @@ export default function SignupPage() {
 
   return (
     <div
-      className="min-h-screen relative flex items-start justify-center p-4 overflow-hidden"
+      className="min-h-screen relative flex items-start justify-center px-4 pt-4 pb-24 md:pt-32 md:pb-8"
       style={{
         background: 'url("/Video Project 4 1_frames/landing image (3).jpeg") center/cover no-repeat',
       }}
@@ -53,8 +53,10 @@ export default function SignupPage() {
       <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/80 via-black/30 to-black/60" />
 
       {/* Ambient orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-amber-500/15 blur-[140px] pointer-events-none z-0" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[140px] pointer-events-none z-0" />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-amber-500/15 blur-[140px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[140px]" />
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.97 }}

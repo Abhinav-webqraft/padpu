@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ShoppingCart, Leaf, Search, Heart, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 
 const leftLinks = [
   { href: "/", label: "Home" },
@@ -16,6 +17,7 @@ const rightLinks = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const { itemCount, openCart } = useCart();
+  const { role } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -88,59 +90,76 @@ export default function Navbar() {
 
         {/* Right Actions */}
         <div className="flex items-center justify-end gap-2 pointer-events-auto ml-auto">
-          {/* Desktop only: Search */}
-          <button className="p-2 hover:bg-white/10 rounded-lg transition-colors hidden md:block">
-            <Search className="w-5 h-5 text-gray-300" />
-          </button>
+          {role && (
+            <>
+              {/* Desktop only: Search */}
+              <button className="p-2 hover:bg-white/10 rounded-lg transition-colors hidden md:block">
+                <Search className="w-5 h-5 text-gray-300" />
+              </button>
 
-          {/* Desktop only: Wishlist */}
-          <Link
-            to="/wishlist"
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors hidden md:block"
-          >
-            <Heart
-              className={`w-5 h-5 ${
-                location.pathname === "/wishlist" ? "text-amber-400" : "text-gray-300"
-              }`}
-            />
-          </Link>
+              {/* Desktop only: Wishlist */}
+              <Link
+                to="/wishlist"
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors hidden md:block"
+              >
+                <Heart
+                  className={`w-5 h-5 ${
+                    location.pathname === "/wishlist" ? "text-amber-400" : "text-gray-300"
+                  }`}
+                />
+              </Link>
+            </>
+          )}
 
-          {/* Desktop only: Profile */}
-          <Link
-            to="/profile"
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors hidden md:block"
-          >
-            <User
-              className={`w-5 h-5 ${
-                location.pathname === "/profile" ? "text-amber-400" : "text-gray-300"
-              }`}
-            />
-          </Link>
+          {/* Profile / Login Button */}
+          {role ? (
+            <Link
+              to="/profile"
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors hidden md:block"
+            >
+              <User
+                className={`w-5 h-5 ${
+                  location.pathname === "/profile" ? "text-amber-400" : "text-gray-300"
+                }`}
+              />
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-[#0d0a05] text-sm font-semibold rounded-lg transition-colors hidden md:block"
+            >
+              Login / Signup
+            </Link>
+          )}
 
-          {/* Cart (always visible) */}
-          <button
-            onClick={openCart}
-            className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
-          >
-            <ShoppingCart className="w-5 h-5 text-gray-300" />
-            {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full amber-gradient text-white text-xs font-bold flex items-center justify-center">
-                {itemCount}
-              </span>
-            )}
-          </button>
+          {role && (
+            <>
+              {/* Cart (conditionally visible) */}
+              <button
+                onClick={openCart}
+                className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <ShoppingCart className="w-5 h-5 text-gray-300" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full amber-gradient text-white text-xs font-bold flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
+              </button>
 
-          {/* Mobile Only: Wishlist icon on right side of top bar */}
-          <Link
-            to="/wishlist"
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors md:hidden"
-          >
-            <Heart
-              className={`w-5 h-5 ${
-                location.pathname === "/wishlist" ? "text-amber-400" : "text-gray-300"
-              }`}
-            />
-          </Link>
+              {/* Mobile Only: Wishlist icon on right side of top bar */}
+              <Link
+                to="/wishlist"
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors md:hidden"
+              >
+                <Heart
+                  className={`w-5 h-5 ${
+                    location.pathname === "/wishlist" ? "text-amber-400" : "text-gray-300"
+                  }`}
+                />
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>

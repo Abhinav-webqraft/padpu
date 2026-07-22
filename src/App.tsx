@@ -80,17 +80,19 @@ function App() {
           <Suspense fallback={<div className="min-h-screen bg-[#0d0a05] flex items-center justify-center font-display text-xl text-amber-500/70 animate-pulse">Loading...</div>}>
             <Routes>
               {/* Login/Signup Routes */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
+              <Route path="/signup" element={<PublicLayout><SignupPage /></PublicLayout>} />
+
+              {/* Public Routes */}
+              <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
+              <Route path="/shop" element={<PublicLayout><ShopPage /></PublicLayout>} />
+              <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
+              <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
+              <Route path="/gallery" element={<PublicLayout><GalleryPage /></PublicLayout>} />
 
               {/* User Routes (Protected) */}
-              <Route path="/" element={<ProtectedUserRoute><HomePage /></ProtectedUserRoute>} />
-              <Route path="/shop" element={<ProtectedUserRoute><ShopPage /></ProtectedUserRoute>} />
               <Route path="/shop/:slug" element={<ProtectedUserRoute><ProductDetailPage /></ProtectedUserRoute>} />
               <Route path="/checkout" element={<ProtectedUserRoute><CheckoutPage /></ProtectedUserRoute>} />
-              <Route path="/about" element={<ProtectedUserRoute><AboutPage /></ProtectedUserRoute>} />
-              <Route path="/contact" element={<ProtectedUserRoute><ContactPage /></ProtectedUserRoute>} />
-              <Route path="/gallery" element={<ProtectedUserRoute><GalleryPage /></ProtectedUserRoute>} />
               <Route path="/profile" element={<ProtectedUserRoute><ProfilePage /></ProtectedUserRoute>} />
               <Route path="/wishlist" element={<ProtectedUserRoute><WishlistPage /></ProtectedUserRoute>} />
 
