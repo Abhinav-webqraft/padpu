@@ -24,9 +24,8 @@ export const products: Product[] = [
     category: 'Pure Honey',
     tags: ['bestseller', 'pure', 'wildflower', 'raw'],
     images: [
-      '/images/honey-jar.png',
-      '/images/honey-pouring.png',
-      '/images/honeycomb.png',
+      '/images/300G MULTI.png',
+      '/images/400 G MULTI.png',
     ],
     weightOptions: [
       { label: '250g', price: 349, grams: 250 },
@@ -52,8 +51,7 @@ export const products: Product[] = [
     tags: ['premium', 'western-ghats', 'forest', 'rare', 'natural'],
     images: [
       '/images/beehive-forest.png',
-      '/images/honey-jar.png',
-      '/images/honeybees.png',
+      '/images/400 G MULTI.png',
     ],
     weightOptions: [
       { label: '250g', price: 599, grams: 250 },
@@ -78,8 +76,7 @@ export const products: Product[] = [
     category: 'Flavoured Honey',
     tags: ['ginger', 'immunity', 'flavoured', 'wellness'],
     images: [
-      '/images/honey-pouring.png',
-      '/images/honey-jar.png',
+      '/images/gift pep honey.png',
     ],
     weightOptions: [
       { label: '250g', price: 399, grams: 250 },
@@ -103,8 +100,7 @@ export const products: Product[] = [
     category: 'Flavoured Honey',
     tags: ['tulsi', 'ayurvedic', 'sacred', 'wellness', 'flavoured'],
     images: [
-      '/images/honeycomb.png',
-      '/images/honey-jar.png',
+      '/images/300G MULTI.png',
     ],
     weightOptions: [
       { label: '250g', price: 449, grams: 250 },
@@ -128,8 +124,8 @@ export const products: Product[] = [
     category: 'Gift Packs',
     tags: ['gift', 'combo', 'trio', 'premium', 'bestseller'],
     images: [
-      '/images/honey-jar.png',
-      '/images/honey-pouring.png',
+      '/images/50g 4 pack.png',
+      '/images/1 gift.png',
     ],
     weightOptions: [
       { label: '3×250g', price: 1299, grams: 750 },
@@ -153,8 +149,8 @@ export const products: Product[] = [
     category: 'Gift Packs',
     tags: ['luxury', 'gift', 'royal', 'premium', 'corporate'],
     images: [
-      '/images/honeycomb.png',
-      '/images/honey-jar.png',
+      '/images/comb gift.png',
+      '/images/1 gift.png',
     ],
     weightOptions: [
       { label: 'Complete Set', price: 2499, grams: 1250 },
@@ -177,8 +173,7 @@ export const products: Product[] = [
     category: 'Pure Honey',
     tags: ['mustard', 'creamy', 'crystallized', 'pure', 'mild'],
     images: [
-      '/images/honey-pouring.png',
-      '/images/honey-jar.png',
+      '/images/400 G MULTI.png',
     ],
     weightOptions: [
       { label: '250g', price: 299, grams: 250 },
@@ -203,8 +198,7 @@ export const products: Product[] = [
     category: 'Flavoured Honey',
     tags: ['cinnamon', 'spice', 'wellness', 'flavoured', 'warm'],
     images: [
-      '/images/honeycomb.png',
-      '/images/honey-jar.png',
+      '/images/300G MULTI.png',
     ],
     weightOptions: [
       { label: '250g', price: 429, grams: 250 },
@@ -222,17 +216,17 @@ export const products: Product[] = [
 export const galleryImages: GalleryImage[] = [
   {
     id: '1',
-    url: '/images/honeybees.png',
-    title: 'Bees at Work',
-    description: 'Our bees foraging from wildflowers in the pristine meadows',
-    category: 'Bees',
+    url: '/images/300G MULTI.png',
+    title: 'Premium Multi-floral Honey',
+    description: 'Fresh from the harvest',
+    category: 'Products',
     order: 1,
   },
   {
     id: '2',
-    url: '/images/honeycomb.png',
-    title: 'Golden Honeycomb',
-    description: 'Perfect honeycomb structure filled with raw, natural honey',
+    url: '/images/400 G MULTI.png',
+    title: 'Golden Honey Jar',
+    description: 'Pure and unfiltered',
     category: 'Products',
     order: 2,
   },
@@ -246,25 +240,25 @@ export const galleryImages: GalleryImage[] = [
   },
   {
     id: '4',
-    url: '/images/beekeeper.png',
-    title: 'Expert Beekeepers',
-    description: 'Tending to hives with care',
-    category: 'Farm',
+    url: '/images/50g 4 pack.png',
+    title: 'Mini Gift Pack',
+    description: 'Perfect sampler set',
+    category: 'Gift Packs',
     order: 4,
   },
   {
     id: '5',
-    url: '/images/honey-jar.png',
-    title: 'Premium Honey Jars',
-    description: 'Our signature honey jars ready for dispatch',
-    category: 'Products',
+    url: '/images/1 gift.png',
+    title: 'Premium Gift Set',
+    description: 'The ideal gift for your loved ones',
+    category: 'Gift Packs',
     order: 5,
   },
   {
     id: '6',
-    url: '/images/honey-pouring.png',
-    title: 'Raw Honey Flow',
-    description: 'The golden harvest — extracting pure honey with care',
+    url: '/images/comb gift.png',
+    title: 'Honeycomb Box',
+    description: 'Fresh honeycomb straight from the hive',
     category: 'Harvest',
     order: 6,
   },

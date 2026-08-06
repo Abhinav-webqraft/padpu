@@ -32,7 +32,7 @@ export default function AboutSection() {
               style={{ border: "1px solid rgba(255, 255, 255, 0.15)" }}
             >
               <img
-                src="/images/beekeeper.png"
+                src="/images/beehive-forest.png"
                 alt="Our Beekeepers"
                 className="object-cover w-full h-full"
                 loading="lazy"

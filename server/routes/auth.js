@@ -24,9 +24,10 @@ router.post('/signup', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    const role = email === 'admin@padpu.com' ? 'admin' : 'user';
     const [result] = await db.execute(
       'INSERT INTO users (name, phonenumber, email, password, role) VALUES (?, ?, ?, ?, ?)',
-      [name, phonenumber, email, hashedPassword, 'user']
+      [name, phonenumber, email, hashedPassword, role]
     );
 
     res.status(201).json({ message: 'User registered successfully' });
@@ -56,10 +57,12 @@ router.post('/signin', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    const role = user.email === 'admin@padpu.com' ? 'admin' : user.role;
+
     const payload = {
       user: {
         id: user.id,
-        role: user.role
+        role: role
       }
     };
 
@@ -69,7 +72,7 @@ router.post('/signin', async (req, res) => {
       { expiresIn: '1h' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token, role: user.role });
+        res.json({ token, role: role });
       }
     );
   } catch (error) {

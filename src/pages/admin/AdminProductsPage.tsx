@@ -18,7 +18,7 @@ const BLANK: NewProduct = {
   category: 'Pure Honey', price: 0, originalPrice: 0,
   inStock: true, stockQuantity: 0, featured: false,
   weightOptions: [{ label: '250g', price: 0, grams: 250 }],
-  images: ['/images/honey-jar.png'],
+  images: ['/images/300G MULTI.png'],
 };
 
 export default function AdminProductsPage() {
