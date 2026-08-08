@@ -60,6 +60,14 @@ export default function AdminSettings() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl space-y-6">
+        <div className="text-white text-center py-12">Loading settings...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl space-y-6">
       <div className="flex items-center justify-between">
