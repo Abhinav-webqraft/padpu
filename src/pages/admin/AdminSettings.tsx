@@ -1,28 +1,63 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Save, Phone, Mail, MapPin } from 'lucide-react';
 import LiquidGlass from '../../components/ui/LiquidGlass';
 
 export default function AdminSettings() {
-  const [email, setEmail] = useState('admin@padpu.com');
-  const [phone, setPhone] = useState('+91 9876543210');
-  const [address, setAddress] = useState('Padpu Farms, Western Ghats, Karnataka');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSave = (e: React.FormEvent) => {
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/settings');
+      const data = await response.json();
+      if (data.success && data.data) {
+        setEmail(data.data.email || '');
+        setPhone((data.data.phone || '').replace(/\D/g, '').substring(0, 10));
+        setAddress(data.data.address || '');
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setSaveMessage('');
     
-    // Simulate save without backend
-    setTimeout(() => {
-      setIsSaving(false);
-      setSaveMessage('Contact details updated successfully (Mock)');
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, phone, address }),
+      });
       
-      // Hide message after 3 seconds
+      const data = await response.json();
+      if (data.success) {
+        setSaveMessage('Settings updated successfully');
+      } else {
+        setSaveMessage('Failed to update settings');
+      }
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      setSaveMessage('An error occurred');
+    } finally {
+      setIsSaving(false);
       setTimeout(() => setSaveMessage(''), 3000);
-    }, 1000);
+    }
   };
 
   return (
@@ -70,9 +105,16 @@ export default function AdminSettings() {
                 <input
                   type="text"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    if (val.length <= 10) setPhone(val);
+                  }}
+                  minLength={10}
+                  maxLength={10}
+                  pattern="\d{10}"
+                  title="Phone number must be exactly 10 digits"
                   className="w-full pl-10 pr-4 py-3 rounded-xl text-white text-sm outline-none transition-all"
-                  placeholder="+91 9876543210"
+                  placeholder="9876543210"
                   style={{
                     background: 'rgba(255,255,255,0.05)',
                     border: '1px solid rgba(255,255,255,0.1)',

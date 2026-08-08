@@ -1,8 +1,33 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Leaf, Mail, Phone, MapPin, Instagram, Facebook, Twitter, Youtube } from "lucide-react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [settings, setSettings] = useState({
+    phone: '+91 98765 43210',
+    email: 'hello@padpufarms.com',
+    address: 'Dakshina Kannada District, Karnataka, India'
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/admin/settings');
+        const data = await response.json();
+        if (data.success && data.data) {
+          setSettings({
+            phone: data.data.phone || '+91 98765 43210',
+            email: data.data.email || 'hello@padpufarms.com',
+            address: data.data.address || 'Dakshina Kannada District, Karnataka, India'
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   return (
     <footer className="forest-bg text-white relative overflow-hidden hidden md:block">
@@ -63,15 +88,15 @@ export default function Footer() {
             <div className="space-y-3 text-gray-400 text-sm">
               <div className="flex gap-3 items-start">
                 <Phone className="w-4 h-4 flex-shrink-0 mt-1 text-amber-500" />
-                <a href="tel:+919876543210" className="hover:text-amber-300 transition-colors">+91 98765 43210</a>
+                <a href={`tel:${settings.phone.replace(/\D/g, '')}`} className="hover:text-amber-300 transition-colors">{settings.phone}</a>
               </div>
               <div className="flex gap-3 items-start">
                 <Mail className="w-4 h-4 flex-shrink-0 mt-1 text-amber-500" />
-                <a href="mailto:hello@padpufarms.com" className="hover:text-amber-300 transition-colors">hello@padpufarms.com</a>
+                <a href={`mailto:${settings.email}`} className="hover:text-amber-300 transition-colors">{settings.email}</a>
               </div>
               <div className="flex gap-3 items-start">
                 <MapPin className="w-4 h-4 flex-shrink-0 mt-1 text-amber-500" />
-                <span>Dakshina Kannada District,<br/>Karnataka, India</span>
+                <span>{settings.address}</span>
               </div>
             </div>
           </div>

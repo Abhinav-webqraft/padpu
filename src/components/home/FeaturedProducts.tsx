@@ -1,13 +1,28 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { products } from "../../data/mockData";
 import ProductCard from "../shop/ProductCard";
 import { useCart } from "../../context/CartContext";
 import { motion } from "framer-motion";
 
 export default function FeaturedProducts() {
   const { addItem, openCart } = useCart();
-  const featured = products.filter((p) => p.featured).slice(0, 4);
+  const [featured, setFeatured] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchRandomProducts = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/products/random');
+        if (res.ok) {
+          const data = await res.json();
+          setFeatured(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch random products', err);
+      }
+    };
+    fetchRandomProducts();
+  }, []);
 
   return (
     <section

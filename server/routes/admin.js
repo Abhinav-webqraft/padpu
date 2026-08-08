@@ -97,4 +97,32 @@ router.delete('/messages/:id', async (req, res) => {
   }
 });
 
+router.get('/settings', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT email, phone, address FROM settings LIMIT 1');
+    const settings = rows[0] || { email: '', phone: '', address: '' };
+    res.json({ success: true, data: settings });
+  } catch (error) {
+    console.error('Error fetching admin settings:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.put('/settings', async (req, res) => {
+  try {
+    const { email, phone, address } = req.body;
+    
+    // Update the first row
+    await pool.query(
+      'UPDATE settings SET email = ?, phone = ?, address = ? WHERE id = 1',
+      [email, phone, address]
+    );
+    
+    res.json({ success: true, message: 'Settings updated' });
+  } catch (error) {
+    console.error('Error updating admin settings:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 export default router;

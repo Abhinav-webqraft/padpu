@@ -3,6 +3,27 @@ import pool from '../db.js';
 
 const router = express.Router();
 
+// Get random products
+router.get('/random', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM products ORDER BY RAND() LIMIT 4');
+    const products = rows.map(row => ({
+      ...row,
+      category: row.category_name,
+      inStock: Boolean(row.inStock),
+      featured: Boolean(row.featured),
+      price: Number(row.price),
+      originalPrice: Number(row.originalPrice),
+      weightOptions: typeof row.weightOptions === 'string' ? JSON.parse(row.weightOptions) : row.weightOptions,
+      images: row.images ? JSON.parse(row.images) : [],
+    }));
+    res.json(products);
+  } catch (error) {
+    console.error('Error fetching random products:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get all products
 router.get('/', async (req, res) => {
   try {

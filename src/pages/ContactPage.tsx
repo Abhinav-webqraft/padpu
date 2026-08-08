@@ -11,6 +11,30 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [settings, setSettings] = useState({
+    phone: '+91 98765 43210',
+    email: 'hello@padpufarms.in',
+    address: 'Padpu Farms, Dakshina Kannada, Karnataka, India'
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/admin/settings');
+        const data = await response.json();
+        if (data.success && data.data) {
+          setSettings({
+            phone: data.data.phone || '+91 98765 43210',
+            email: data.data.email || 'hello@padpufarms.in',
+            address: data.data.address || 'Padpu Farms, Dakshina Kannada, Karnataka, India'
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -189,22 +213,22 @@ export default function ContactPage() {
                 {
                   icon: Phone,
                   label: 'Phone',
-                  value: '+91 98765 43210',
+                  value: settings.phone,
                   sub: 'Mon–Sat, 9:00 AM – 6:00 PM IST',
                   color: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
                 },
                 {
                   icon: Mail,
                   label: 'Email',
-                  value: 'hello@padpufarms.in',
+                  value: settings.email,
                   sub: 'We reply within 24 hours',
                   color: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
                 },
                 {
                   icon: MapPin,
                   label: 'Farm Address',
-                  value: 'Padpu Farms, Dakshina Kannada',
-                  sub: 'Karnataka, India',
+                  value: settings.address,
+                  sub: 'India',
                   color: 'text-green-400 bg-green-400/10 border-green-400/20',
                 },
               ].map(({ icon: Icon, label, value, sub, color }) => (
@@ -223,7 +247,7 @@ export default function ContactPage() {
 
             {/* WhatsApp CTA */}
             <a
-              href="https://wa.me/919876543210?text=Hi%2C%20I%27m%20interested%20in%20your%20honey%20products!"
+              href={`https://wa.me/${settings.phone.replace(/\D/g, '')}?text=Hi%2C%20I%27m%20interested%20in%20your%20honey%20products!`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-white text-sm hover:opacity-90 transition-opacity shadow-[0_0_15px_rgba(37,211,102,0.2)]"

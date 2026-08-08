@@ -1,9 +1,27 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 export default function WhatsAppButton() {
+  const [phone, setPhone] = useState('919876543210');
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/admin/settings');
+        const data = await response.json();
+        if (data.success && data.data && data.data.phone) {
+          setPhone(data.data.phone.replace(/\D/g, ''));
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings for WhatsApp:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   return (
     <motion.a
-      href="https://wa.me/919876543210?text=Hi%2C%20I%27m%20interested%20in%20your%20honey%20products!"
+      href={`https://wa.me/${phone}?text=Hi%2C%20I%27m%20interested%20in%20your%20honey%20products!`}
       target="_blank"
       rel="noopener noreferrer"
       initial={{ scale: 0, opacity: 0 }}
