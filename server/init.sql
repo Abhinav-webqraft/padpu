@@ -114,5 +114,4 @@ CREATE TABLE settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-INSERT INTO settings (email, phone, address) VALUES 
-('admin@padpu.com', '+91 9876543210', 'Padpu Farms, Western Ghats, Karnataka');
+
