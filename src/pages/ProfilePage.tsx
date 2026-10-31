@@ -63,11 +63,30 @@ export default function ProfilePage() {
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsUpdating(true);
     setUpdateError('');
     setUpdateSuccess('');
+
+    if (!updateData.name.trim() || updateData.name.trim().length < 2) {
+      setUpdateError('Name must be at least 2 characters');
+      return;
+    }
+    if (!updateData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updateData.email.trim())) {
+      setUpdateError('Please enter a valid email address');
+      return;
+    }
+    if (updateData.password && updateData.password.length < 6) {
+      setUpdateError('New password must be at least 6 characters');
+      return;
+    }
+
+    setIsUpdating(true);
     try {
-      await updateProfile(updateData);
+      await updateProfile({
+        ...updateData,
+        name: updateData.name.trim(),
+        email: updateData.email.trim(),
+        location: updateData.location.trim(),
+      });
       setUpdateSuccess('Saved!');
       setTimeout(() => setShowUpdateModal(false), 1200);
     } catch (err: any) {

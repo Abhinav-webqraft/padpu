@@ -1,14 +1,21 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Phone, Mail, MapPin } from 'lucide-react';
-import LiquidGlass from '../../components/ui/LiquidGlass';
+import { Save, Phone, Mail, MapPin, AlertCircle, CheckCircle2 } from 'lucide-react';
+
+type SettingsErrors = {
+  email?: string;
+  phone?: string;
+  address?: string;
+};
 
 export default function AdminSettings() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<SettingsErrors>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [saveError, setSaveError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -31,29 +38,46 @@ export default function AdminSettings() {
     }
   };
 
+  const validate = () => {
+    const errs: SettingsErrors = {};
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      errs.email = 'Enter a valid support email address';
+    }
+    if (!/^[0-9]{10}$/.test(phone)) {
+      errs.phone = 'Phone number must be 10 digits';
+    }
+    if (!address.trim() || address.trim().length < 5) {
+      errs.address = 'Enter complete farm address';
+    }
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
     setSaveMessage('');
-    
+    setSaveError('');
+
+    if (!validate()) return;
+
+    setIsSaving(true);
+
     try {
       const response = await fetch('http://localhost:5000/api/admin/settings', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, phone, address }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), phone, address: address.trim() }),
       });
-      
+
       const data = await response.json();
       if (data.success) {
         setSaveMessage('Settings updated successfully');
       } else {
-        setSaveMessage('Failed to update settings');
+        setSaveError('Failed to update settings');
       }
     } catch (error) {
       console.error('Failed to save settings:', error);
-      setSaveMessage('An error occurred');
+      setSaveError('An error occurred while saving');
     } finally {
       setIsSaving(false);
       setTimeout(() => setSaveMessage(''), 3000);
@@ -62,105 +86,113 @@ export default function AdminSettings() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl space-y-6">
-        <div className="text-white text-center py-12">Loading settings...</div>
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+        <div className="text-stone-400 text-xs text-center py-16">Loading settings...</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-display font-bold text-white tracking-wide">
-          Settings
-        </h1>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+      <div>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">Configuration</span>
+        <h1 className="text-2xl sm:text-3xl font-display font-bold text-white mt-0.5">Store Settings</h1>
       </div>
 
-      <LiquidGlass radius={24} className="p-8">
+      <div className="rounded-3xl bg-white/[0.04] border border-white/10 p-5 sm:p-8">
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-white mb-2">Contact Information</h2>
-          <p className="text-white/50 text-sm">Update the contact details displayed across the website.</p>
+          <h2 className="text-sm font-bold text-white">Public Contact Details</h2>
+          <p className="text-stone-400 text-xs mt-0.5">Displayed on the Contact page, Footer, and WhatsApp links.</p>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-xs font-semibold text-white/60 mb-2 ml-1 uppercase tracking-wider">
-                Support Email
+        <form onSubmit={handleSave} noValidate className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="min-w-0">
+              <label className="block text-[11px] font-semibold text-stone-400 mb-1.5 uppercase tracking-wider">
+                Support Email *
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-400/60" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-400/70" />
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl text-white text-sm outline-none transition-all"
-                  placeholder="contact@padpu.com"
-                  style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (fieldErrors.email) setFieldErrors(p => ({ ...p, email: undefined }));
                   }}
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/30 border text-white text-xs sm:text-sm outline-none transition-colors ${
+                    fieldErrors.email ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-amber-500/50'
+                  }`}
+                  placeholder="hello@padpufarms.in"
                 />
               </div>
+              {fieldErrors.email && (
+                <p className="mt-1 flex items-center gap-1 text-[11px] text-red-400">
+                  <AlertCircle className="w-3 h-3 shrink-0" /> {fieldErrors.email}
+                </p>
+              )}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-white/60 mb-2 ml-1 uppercase tracking-wider">
-                Phone Number
+            <div className="min-w-0">
+              <label className="block text-[11px] font-semibold text-stone-400 mb-1.5 uppercase tracking-wider">
+                Phone Number (10 digits) *
               </label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-400/60" />
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-400/70" />
                 <input
-                  type="text"
+                  type="tel"
                   value={phone}
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, '');
                     if (val.length <= 10) setPhone(val);
+                    if (fieldErrors.phone) setFieldErrors(p => ({ ...p, phone: undefined }));
                   }}
-                  minLength={10}
                   maxLength={10}
-                  pattern="\d{10}"
-                  title="Phone number must be exactly 10 digits"
-                  className="w-full pl-10 pr-4 py-3 rounded-xl text-white text-sm outline-none transition-all"
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/30 border text-white text-xs sm:text-sm outline-none transition-colors font-sans ${
+                    fieldErrors.phone ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-amber-500/50'
+                  }`}
                   placeholder="9876543210"
-                  style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                  }}
                 />
               </div>
+              {fieldErrors.phone && (
+                <p className="mt-1 flex items-center gap-1 text-[11px] text-red-400">
+                  <AlertCircle className="w-3 h-3 shrink-0" /> {fieldErrors.phone}
+                </p>
+              )}
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-white/60 mb-2 ml-1 uppercase tracking-wider">
-              Farm Address
+            <label className="block text-[11px] font-semibold text-stone-400 mb-1.5 uppercase tracking-wider">
+              Farm Address *
             </label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-4 h-4 w-4 text-amber-400/60" />
+              <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-amber-400/70" />
               <textarea
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                rows={3}
-                className="w-full pl-10 pr-4 py-3 rounded-xl text-white text-sm outline-none transition-all resize-none"
-                placeholder="Enter complete farm address..."
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                onChange={(e) => {
+                  setAddress(e.target.value);
+                  if (fieldErrors.address) setFieldErrors(p => ({ ...p, address: undefined }));
                 }}
+                rows={3}
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/30 border text-white text-xs sm:text-sm outline-none transition-colors resize-none ${
+                  fieldErrors.address ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-amber-500/50'
+                }`}
+                placeholder="Padpu Farms, Dakshina Kannada, Karnataka"
               />
             </div>
+            {fieldErrors.address && (
+              <p className="mt-1 flex items-center gap-1 text-[11px] text-red-400">
+                <AlertCircle className="w-3 h-3 shrink-0" /> {fieldErrors.address}
+              </p>
+            )}
           </div>
 
-          <div className="pt-4 flex items-center gap-4 border-t border-white/10">
+          <div className="pt-4 flex flex-wrap items-center gap-4 border-t border-white/10">
             <button
               type="submit"
               disabled={isSaving}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all disabled:opacity-50 hover:scale-105"
-              style={{
-                background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
-                color: '#1c1005'
-              }}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs text-stone-950 amber-gradient transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(245,158,11,0.2)]"
             >
               <Save className="w-4 h-4" />
               {isSaving ? 'Saving...' : 'Save Changes'}
@@ -168,16 +200,24 @@ export default function AdminSettings() {
 
             {saveMessage && (
               <motion.span
-                initial={{ opacity: 0, x: -10 }}
+                initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="text-green-400 text-sm flex items-center gap-2"
+                className="text-emerald-400 text-xs font-semibold flex items-center gap-1.5"
               >
+                <CheckCircle2 className="w-4 h-4" />
                 {saveMessage}
               </motion.span>
             )}
+
+            {saveError && (
+              <span className="text-red-400 text-xs font-semibold flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4" />
+                {saveError}
+              </span>
+            )}
           </div>
         </form>
-      </LiquidGlass>
+      </div>
     </div>
   );
 }

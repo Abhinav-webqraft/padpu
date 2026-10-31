@@ -51,9 +51,11 @@ const PublicLayout = ({ children }: { children: React.ReactNode }) => (
 );
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-screen bg-[#110e07] text-white">
+  <div className="min-h-screen forest-bg text-white relative overflow-x-hidden">
+    <div className="fixed top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-amber-500/[0.06] blur-[150px] pointer-events-none z-0" />
+    <div className="fixed bottom-[-10%] left-[10%] w-[500px] h-[500px] rounded-full bg-emerald-500/[0.04] blur-[150px] pointer-events-none z-0" />
     <AdminSidebar />
-    <main className="lg:pl-64 min-h-screen">{children}</main>
+    <main className="lg:pl-64 min-h-screen relative z-10">{children}</main>
   </div>
 );
 
