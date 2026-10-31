@@ -29,7 +29,7 @@ export default function WhatsAppButton() {
       transition={{ delay: 2, type: 'spring' }}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
-      className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl shadow-green-900/40"
+      className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl shadow-green-900/40"
       style={{ background: 'linear-gradient(135deg, #25d366, #128c7e)' }}
       aria-label="Chat on WhatsApp"
     >

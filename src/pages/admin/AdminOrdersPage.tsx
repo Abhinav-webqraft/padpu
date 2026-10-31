@@ -258,7 +258,7 @@ export default function AdminOrdersPage() {
                   </div>
                   <div className="flex justify-between items-center pt-3 border-t border-white/10">
                     <span className="text-white font-bold text-base">Total</span>
-                    <span className="text-xl font-display font-bold text-amber-400">₹{selectedOrder.total.toFixed(2)}</span>
+                    <span className="text-xl font-sans font-bold text-amber-400">₹{selectedOrder.total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

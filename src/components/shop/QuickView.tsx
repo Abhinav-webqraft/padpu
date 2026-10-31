@@ -74,7 +74,7 @@ export default function QuickView({ product, onClose }: QuickViewProps) {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="font-display font-bold text-2xl text-gray-900">₹{weight.price}</span>
+                <span className="font-sans font-bold text-2xl text-gray-900">₹{weight.price}</span>
                 {product.originalPrice && (
                   <span className="text-gray-400 line-through text-sm">₹{product.originalPrice}</span>
                 )}

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { ShoppingCart, Heart } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
-import { useState } from "react";
+import { useWishlist } from "../../context/WishlistContext";
 import { Product } from "../../types";
 import { formatWeightLabel } from "../../utils/formatters";
 
@@ -14,8 +14,9 @@ interface ProductCardProps {
 export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const { addItem } = useCart();
   const { role } = useAuth();
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { isWishlisted, toggleWishlist } = useWishlist();
   const defaultWeight = product.weightOptions[0];
+  const saved = isWishlisted(product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -25,95 +26,81 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
   };
 
   return (
-    <div
-      className="group rounded-2xl overflow-hidden transition-all duration-500 hover:-translate-y-2 h-full flex flex-col relative"
-      style={{
-        background: "rgba(255, 255, 255, 0.05)",
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
-        e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.2)";
-        e.currentTarget.style.boxShadow =
-          "0 12px 30px rgba(0, 0, 0, 0.3)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-        e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    >
-      {/* Badges */}
+    <div className="group rounded-2xl bg-white/[0.04] border border-white/10 hover:border-amber-500/30 hover:bg-white/[0.06] overflow-hidden transition-all duration-300 hover:-translate-y-1 h-full flex flex-col relative">
+      {/* Badge */}
       {product.badge && (
-        <div className="absolute top-4 left-4 z-10">
-          <span className="amber-gradient text-stone-900 text-[10px] font-bold uppercase tracking-wider py-1 px-3 rounded-full shadow-sm">
+        <div className="absolute top-3 left-3 z-10">
+          <span className="amber-gradient text-stone-950 text-[10px] font-bold uppercase tracking-wider py-1 px-2.5 rounded-full shadow-sm">
             {product.badge}
           </span>
         </div>
       )}
 
       {/* Image */}
-      <Link to={role ? `/shop/${product.slug}` : "/login"} className="relative h-64 overflow-hidden block" style={{ background: "rgba(255, 255, 255, 0.03)" }}>
+      <Link
+        to={role ? `/shop/${product.slug}` : "/login"}
+        className="relative aspect-[4/3] overflow-hidden block bg-black/20"
+      >
         <img
           src={product.images[0]}
           alt={product.name}
-          className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700 ease-out"
+          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500 ease-out"
           loading="lazy"
         />
-        
-        {/* Quick View Overlay (Desktop) */}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:flex items-center justify-center">
-          <span className="bg-amber-500 text-stone-900 text-sm font-semibold py-2 px-6 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 text-center max-w-[80%] leading-tight">
-            {role ? "Quick View" : "Login to see full details"}
-          </span>
-        </div>
 
         <button
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            setIsWishlisted(!isWishlisted);
+            toggleWishlist(product);
           }}
-          className="absolute top-4 right-4 p-2.5 backdrop-blur-sm rounded-full shadow-sm hover:shadow-md transition-all z-20 hover:scale-110"
-          style={{ background: "rgba(255, 255, 255, 0.1)", border: "1px solid rgba(255, 255, 255, 0.15)" }}
+          className="absolute top-3 right-3 p-2 backdrop-blur-md rounded-full bg-black/40 border border-white/15 hover:bg-black/60 transition-all z-20"
+          aria-label="Toggle wishlist"
         >
           <Heart
-            className={`w-4 h-4 transition-all duration-300 ${
-              isWishlisted ? "fill-red-500 text-red-500 scale-110" : "text-gray-400"
+            className={`w-3.5 h-3.5 transition-all ${
+              saved ? "fill-red-500 text-red-500 scale-110" : "text-white/80"
             }`}
           />
         </button>
       </Link>
 
       {/* Content */}
-      <div className="p-5 flex flex-col flex-grow">
-        <Link to={role ? `/shop/${product.slug}` : "/login"} className="block mb-2 group-hover:text-amber-400 transition-colors">
-          <h3 className="font-semibold text-white line-clamp-1">{product.name}</h3>
+      <div className="p-4 flex flex-col flex-grow">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400/80">
+            {product.category}
+          </span>
+          {defaultWeight && (
+            <span className="text-[10px] font-bold text-stone-300 px-2 py-0.5 rounded bg-white/5 border border-white/5">
+              {formatWeightLabel(defaultWeight.grams, defaultWeight.label)}
+            </span>
+          )}
+        </div>
+
+        <Link
+          to={role ? `/shop/${product.slug}` : "/login"}
+          className="block mb-1.5 group-hover:text-amber-400 transition-colors"
+        >
+          <h3 className="font-semibold text-white text-sm line-clamp-1">{product.name}</h3>
         </Link>
-        
-        <p className="text-xs text-gray-400 mb-4 line-clamp-2 flex-grow">{product.shortDescription}</p>
-        
-        {defaultWeight && (
-          <p
-            className="text-[10px] font-bold text-amber-400 mb-3 uppercase tracking-widest self-start px-2 py-1 rounded"
-            style={{ background: "rgba(245, 158, 11, 0.1)" }}
-          >
-            {formatWeightLabel(defaultWeight.grams, defaultWeight.label)}
-          </p>
-        )}
-        
-        <div className="flex items-center justify-between pt-4 mt-auto" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.1)" }}>
-          <div className="flex flex-col">
+
+        <p className="text-xs text-stone-400 mb-3 line-clamp-1 flex-grow font-light">
+          {product.shortDescription}
+        </p>
+
+        <div className="flex items-center justify-between pt-3 mt-auto border-t border-white/10">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-base font-bold text-white font-sans">₹{defaultWeight?.price}</span>
             {product.originalPrice && (
-              <span className="text-xs text-gray-500 line-through">₹{product.originalPrice}</span>
+              <span className="text-xs text-stone-500 line-through font-sans">₹{product.originalPrice}</span>
             )}
-            <span className="text-lg font-bold text-white">₹{defaultWeight.price}</span>
           </div>
-          
+
           {role ? (
             <button
               onClick={handleAddToCart}
-              className="w-10 h-10 rounded-full amber-gradient text-stone-900 flex items-center justify-center hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all hover:scale-110"
+              className="w-9 h-9 rounded-xl amber-gradient text-stone-950 flex items-center justify-center hover:shadow-[0_0_15px_rgba(245,158,11,0.35)] transition-all hover:scale-105"
               aria-label="Add to cart"
             >
               <ShoppingCart className="w-4 h-4" />
@@ -121,9 +108,9 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           ) : (
             <Link
               to="/login"
-              className="text-[10px] font-bold text-amber-500 uppercase hover:text-amber-400 transition-colors text-right leading-tight max-w-[80px]"
+              className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition-colors"
             >
-              Login for details
+              Sign in →
             </Link>
           )}
         </div>

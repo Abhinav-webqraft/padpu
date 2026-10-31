@@ -3,21 +3,28 @@ import pool from '../db.js';
 
 const router = express.Router();
 
+const formatProduct = (row) => ({
+  ...row,
+  id: String(row.id),
+  category: row.category_name,
+  inStock: Boolean(row.inStock),
+  featured: Boolean(row.featured),
+  price: Number(row.price),
+  originalPrice: row.originalPrice != null ? Number(row.originalPrice) : undefined,
+  stockQuantity: Number(row.stockQuantity || 0),
+  rating: Number(row.rating || 5.0),
+  reviewCount: Number(row.reviewCount || 0),
+  tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : (Array.isArray(row.tags) ? row.tags : []),
+  badge: row.badge || undefined,
+  weightOptions: typeof row.weightOptions === 'string' ? JSON.parse(row.weightOptions) : (row.weightOptions || []),
+  images: row.images ? (typeof row.images === 'string' ? JSON.parse(row.images) : row.images) : [],
+});
+
 // Get random products
 router.get('/random', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM products ORDER BY RAND() LIMIT 4');
-    const products = rows.map(row => ({
-      ...row,
-      category: row.category_name,
-      inStock: Boolean(row.inStock),
-      featured: Boolean(row.featured),
-      price: Number(row.price),
-      originalPrice: Number(row.originalPrice),
-      weightOptions: typeof row.weightOptions === 'string' ? JSON.parse(row.weightOptions) : row.weightOptions,
-      images: row.images ? JSON.parse(row.images) : [],
-    }));
-    res.json(products);
+    res.json(rows.map(formatProduct));
   } catch (error) {
     console.error('Error fetching random products:', error);
     res.status(500).json({ message: 'Server error' });
@@ -28,18 +35,7 @@ router.get('/random', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM products ORDER BY created_at DESC');
-    // Parse JSON strings back to objects
-    const products = rows.map(row => ({
-      ...row,
-      category: row.category_name,
-      inStock: Boolean(row.inStock),
-      featured: Boolean(row.featured),
-      price: Number(row.price),
-      originalPrice: Number(row.originalPrice),
-      weightOptions: typeof row.weightOptions === 'string' ? JSON.parse(row.weightOptions) : row.weightOptions,
-      images: row.images ? JSON.parse(row.images) : [],
-    }));
-    res.json(products);
+    res.json(rows.map(formatProduct));
   } catch (error) {
     console.error('Error fetching products:', error);
     res.status(500).json({ message: 'Server error' });
@@ -51,16 +47,17 @@ router.post('/', async (req, res) => {
   try {
     const {
       slug, name, shortDescription, description, category,
-      price, originalPrice, inStock, featured, weightOptions, images
+      price, originalPrice, inStock, stockQuantity, rating, reviewCount, tags, badge, featured, weightOptions, images
     } = req.body;
 
     await pool.query(
       `INSERT INTO products 
-      (slug, name, shortDescription, description, category_name, price, originalPrice, inStock, featured, weightOptions, images) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (slug, name, shortDescription, description, category_name, price, originalPrice, inStock, stockQuantity, rating, reviewCount, tags, badge, featured, weightOptions, images) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         slug, name, shortDescription, description, category,
-        price, originalPrice, inStock, featured, 
+        price, originalPrice, inStock ?? true, stockQuantity || 0, rating || 5.0, reviewCount || 0,
+        JSON.stringify(tags || []), badge || null, featured ?? false, 
         JSON.stringify(weightOptions || []), 
         JSON.stringify(images || [])
       ]
@@ -82,17 +79,18 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const {
       slug, name, shortDescription, description, category,
-      price, originalPrice, inStock, featured, weightOptions, images
+      price, originalPrice, inStock, stockQuantity, rating, reviewCount, tags, badge, featured, weightOptions, images
     } = req.body;
 
     await pool.query(
       `UPDATE products 
        SET slug = ?, name = ?, shortDescription = ?, description = ?, category_name = ?, 
-           price = ?, originalPrice = ?, inStock = ?, featured = ?, weightOptions = ?, images = ?
+           price = ?, originalPrice = ?, inStock = ?, stockQuantity = ?, rating = ?, reviewCount = ?, tags = ?, badge = ?, featured = ?, weightOptions = ?, images = ?
        WHERE id = ?`,
       [
         slug, name, shortDescription, description, category,
-        price, originalPrice, inStock, featured, 
+        price, originalPrice, inStock ?? true, stockQuantity || 0, rating || 5.0, reviewCount || 0,
+        JSON.stringify(tags || []), badge || null, featured ?? false, 
         JSON.stringify(weightOptions || []), 
         JSON.stringify(images || []),
         id
@@ -122,3 +120,4 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
+

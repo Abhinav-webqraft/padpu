@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { ShieldCheck, Truck, Droplet, Star, Minus, Plus, ShoppingCart, ArrowLeft, Leaf } from "lucide-react";
+import { useWishlist } from "../context/WishlistContext";
+import { ShieldCheck, Truck, Droplet, Star, Minus, Plus, ShoppingCart, ArrowLeft, Leaf, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatWeightLabel } from "../utils/formatters";
 
@@ -9,10 +10,11 @@ export default function ProductDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { addItem, openCart } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
-  const [showAllReviews, setShowAllReviews] = useState(false);
-  
+  const [showWriteReview, setShowWriteReview] = useState(false);
+
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedWeight, setSelectedWeight] = useState<any>(null);
@@ -38,22 +40,23 @@ export default function ProductDetailPage() {
   }, [product, selectedWeight]);
 
   if (loading) {
-    return <div className="min-h-screen pt-24 pb-20 bg-stone-950 flex items-center justify-center text-white">Loading...</div>;
+    return <div className="min-h-screen pt-24 pb-20 forest-bg flex items-center justify-center text-amber-400/70 text-sm">Loading...</div>;
   }
 
   if (!product || !selectedWeight) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4 bg-stone-950 relative">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1587049352847-4d4b12746440?q=80&w=2000&auto=format&fit=crop')] opacity-[0.03] object-cover pointer-events-none" />
-        <Leaf className="w-16 h-16 text-amber-400 mb-6 relative z-10" />
-        <h2 className="text-3xl font-display font-bold text-white mb-4 relative z-10">Product Not Found</h2>
-        <p className="text-stone-400 mb-8 max-w-md relative z-10">We couldn't find the honey you're looking for. It might have been moved or is no longer available.</p>
-        <Link to="/shop" className="px-8 py-3 amber-gradient text-stone-900 font-bold rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] transition-all relative z-10">
+      <div className="min-h-screen flex flex-col items-center justify-center text-center px-4 forest-bg relative">
+        <Leaf className="w-12 h-12 text-amber-400 mb-4" />
+        <h2 className="text-2xl font-display font-bold text-white mb-2">Product Not Found</h2>
+        <p className="text-stone-400 text-xs mb-6">This item may have been moved or is unavailable.</p>
+        <Link to="/shop" className="px-6 py-2.5 amber-gradient text-stone-950 text-xs font-bold rounded-xl">
           Back to Shop
         </Link>
       </div>
     );
   }
+
+  const saved = isWishlisted(product.id);
 
   const handleAddToCart = () => {
     addItem(product, selectedWeight, quantity);
@@ -61,29 +64,26 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-20 bg-stone-950 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1587049352847-4d4b12746440?q=80&w=2000&auto=format&fit=crop')] opacity-[0.03] object-cover" />
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-600/10 rounded-full blur-[120px]" />
-      </div>
+    <div className="min-h-screen pt-20 md:pt-28 pb-24 forest-bg relative overflow-hidden">
+      <div className="absolute top-0 left-1/4 w-[450px] h-[450px] bg-amber-500/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[450px] h-[450px] bg-emerald-500/5 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
-        
-        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-sm text-stone-400 hover:text-amber-400 transition-colors mb-8 group">
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-1.5 text-xs text-stone-400 hover:text-amber-400 transition-colors mb-6 group"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
           Back
         </button>
 
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
-          
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Images Section */}
-          <div className="w-full lg:w-1/2 flex flex-col gap-4">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
+          <div className="lg:col-span-6 flex flex-col gap-3">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="relative w-full aspect-[4/5] sm:aspect-square rounded-3xl overflow-hidden bg-stone-900/50 backdrop-blur-sm border border-white/5"
+              className="relative w-full aspect-square rounded-3xl overflow-hidden bg-white/[0.03] border border-white/10"
             >
               <AnimatePresence mode="wait">
                 <motion.img
@@ -91,35 +91,43 @@ export default function ProductDetailPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.25 }}
                   src={product.images[activeImage]}
                   alt={product.name}
                   className="object-cover w-full h-full"
                 />
               </AnimatePresence>
-              
+
               {product.badge && (
-                <div className="absolute top-6 left-6 z-10">
-                  <span className="amber-gradient text-stone-900 text-xs font-bold uppercase tracking-wider py-1.5 px-4 rounded-full shadow-lg">
+                <div className="absolute top-4 left-4 z-10">
+                  <span className="amber-gradient text-stone-950 text-[10px] font-bold uppercase tracking-wider py-1 px-3 rounded-full shadow-md">
                     {product.badge}
                   </span>
                 </div>
               )}
+
+              <button
+                onClick={() => toggleWishlist(product)}
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 backdrop-blur-md border border-white/15 flex items-center justify-center hover:bg-black/70 transition-all z-10"
+              >
+                <Heart className={`w-4 h-4 ${saved ? "fill-red-500 text-red-500" : "text-white"}`} />
+              </button>
             </motion.div>
 
             {/* Thumbnails */}
             {product.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-4">
-                {product.images.map((img, idx) => (
+              <div className="grid grid-cols-5 gap-2.5">
+                {product.images.map((img: string, idx: number) => (
                   <button
                     key={idx}
                     onClick={() => setActiveImage(idx)}
-                    className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${
-                      activeImage === idx ? "border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]" : "border-transparent opacity-50 hover:opacity-100"
+                    className={`relative aspect-square rounded-xl overflow-hidden border transition-all ${
+                      activeImage === idx
+                        ? "border-amber-500 ring-2 ring-amber-500/20"
+                        : "border-white/10 opacity-50 hover:opacity-100"
                     }`}
                   >
-                    <img src={img} alt={`Thumbnail ${idx}`} className="object-cover w-full h-full" />
-                    {activeImage !== idx && <div className="absolute inset-0 bg-black/20" />}
+                    <img src={img} alt="" className="object-cover w-full h-full" />
                   </button>
                 ))}
               </div>
@@ -127,249 +135,222 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Details Section */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="w-full lg:w-1/2 flex flex-col"
+            className="lg:col-span-6 rounded-3xl bg-white/[0.04] border border-white/10 p-6 sm:p-8"
           >
-            <div className="mb-2 flex items-center gap-2 text-sm text-amber-500/80 uppercase tracking-wider font-semibold">
-              <span className="text-amber-400">{product.category}</span>
-            </div>
-            
-            <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-4">{product.name}</h1>
-            
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex items-center gap-1">
-                <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="text-xs text-amber-400 uppercase tracking-widest font-semibold">
+                {product.category}
+              </span>
+              <div className="flex items-center gap-1.5 text-xs">
+                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                 <span className="font-bold text-white">{product.rating}</span>
+                <span className="text-stone-500">({product.reviewCount})</span>
               </div>
-              <span className="text-stone-400 text-sm">({product.reviewCount} reviews)</span>
             </div>
 
-            <div className="flex items-baseline gap-3 mb-8">
-              <span className="text-3xl font-bold text-white">₹{selectedWeight.price}</span>
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-white mb-3">
+              {product.name}
+            </h1>
+
+            <div className="flex items-baseline gap-2.5 mb-5">
+              <span className="text-2xl sm:text-3xl font-bold text-amber-400 font-sans">
+                ₹{selectedWeight.price}
+              </span>
               {product.originalPrice && selectedWeight.label === product.weightOptions[0].label && (
-                <span className="text-lg text-stone-500 line-through">₹{product.originalPrice}</span>
+                <span className="text-sm text-stone-500 line-through font-sans">
+                  ₹{product.originalPrice}
+                </span>
               )}
+              <span className="ml-auto text-xs">
+                {product.inStock ? (
+                  <span className="text-emerald-400 font-medium inline-flex items-center gap-1">
+                    <Droplet className="w-3.5 h-3.5" /> In Stock
+                  </span>
+                ) : (
+                  <span className="text-red-400 font-medium">Out of Stock</span>
+                )}
+              </span>
             </div>
 
-            <p className="text-stone-300 text-lg leading-relaxed mb-10 font-light">
+            <p className="text-stone-300 text-sm leading-relaxed mb-6 font-light">
               {product.description}
             </p>
 
-            {/* Options */}
-            <div className="space-y-8 mb-10 border-t border-b border-white/10 py-8">
+            {/* Size & Quantity */}
+            <div className="space-y-5 py-5 border-t border-b border-white/10 mb-6">
               <div>
-                <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Select Size</h3>
-                <div className="flex flex-wrap gap-3">
-                  {product.weightOptions.map((option: any, index: number) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedWeight(option)}
-                      className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all duration-300 ${
-                        selectedWeight?.label === option.label && selectedWeight?.grams === option.grams
-                          ? "border-amber-500 bg-amber-500/10 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
-                          : "border-white/10 text-stone-300 hover:border-white/30 hover:bg-white/5 bg-stone-900/50 backdrop-blur-sm"
-                      }`}
-                    >
-                      {formatWeightLabel(option.grams, option.label)} — ₹{option.price}
-                    </button>
-                  ))}
+                <span className="block text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-2.5">
+                  Select Size
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {product.weightOptions.map((option: any, index: number) => {
+                    const active = selectedWeight?.label === option.label && selectedWeight?.grams === option.grams;
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedWeight(option)}
+                        className={`px-4 py-2 rounded-xl border text-xs font-semibold transition-all ${
+                          active
+                            ? "border-amber-500 bg-amber-500/15 text-amber-400"
+                            : "border-white/10 text-stone-300 hover:border-white/25 bg-white/[0.03]"
+                        }`}
+                      >
+                        {formatWeightLabel(option.grams, option.label)} • ₹{option.price}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Quantity</h3>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center bg-stone-900/50 backdrop-blur-sm border border-white/10 rounded-xl p-1">
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-stone-400 hover:bg-white/10 hover:text-white transition-all"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="w-12 text-center font-medium text-white">{quantity}</span>
-                    <button
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-stone-400 hover:bg-white/10 hover:text-white transition-all"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <span className="text-sm text-stone-400">
-                    {product.inStock ? (
-                      <span className="text-emerald-400 font-medium flex items-center gap-1.5"><Droplet className="w-4 h-4"/> In Stock</span>
-                    ) : (
-                      <span className="text-red-400 font-medium">Out of Stock</span>
-                    )}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">
+                  Quantity
+                </span>
+                <div className="flex items-center bg-black/30 border border-white/10 rounded-xl p-1">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:bg-white/10 hover:text-white transition-all"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="w-10 text-center text-sm font-semibold text-white font-sans">
+                    {quantity}
                   </span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:bg-white/10 hover:text-white transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Actions */}
+            {/* Add to Cart */}
             <button
               onClick={handleAddToCart}
               disabled={!product.inStock}
-              className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-lg transition-all duration-300 ${
+              className={`w-full py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all ${
                 product.inStock
-                  ? "amber-gradient text-stone-900 hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:-translate-y-1"
-                  : "bg-stone-800 text-stone-500 cursor-not-allowed border border-white/5"
+                  ? "amber-gradient text-stone-950 hover:shadow-[0_0_25px_rgba(245,158,11,0.35)]"
+                  : "bg-white/5 text-stone-500 cursor-not-allowed border border-white/5"
               }`}
             >
-              <ShoppingCart className="w-5 h-5" />
-              {product.inStock ? "Add to Cart" : "Sold Out"}
+              <ShoppingCart className="w-4 h-4" />
+              {product.inStock ? `Add to Cart • ₹${selectedWeight.price * quantity}` : "Sold Out"}
             </button>
 
-            {/* Features */}
-            <div className="mt-8 grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-stone-900/50 backdrop-blur-sm border border-white/5 hover:border-white/10 transition-colors">
-                <ShieldCheck className="w-6 h-6 text-amber-500" />
+            {/* Trust badges */}
+            <div className="mt-5 grid grid-cols-2 gap-3 pt-4">
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-white">Lab Tested</p>
-                  <p className="text-xs text-stone-400">100% Pure Certified</p>
+                  <p className="text-xs font-semibold text-white">100% Raw & Pure</p>
+                  <p className="text-[10px] text-stone-400">Lab tested quality</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-stone-900/50 backdrop-blur-sm border border-white/5 hover:border-white/10 transition-colors">
-                <Truck className="w-6 h-6 text-amber-500" />
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                <Truck className="w-4 h-4 text-amber-400 shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-white">Fast Delivery</p>
-                  <p className="text-xs text-stone-400">Secure packaging</p>
+                  <p className="text-xs font-semibold text-white">Safe Delivery</p>
+                  <p className="text-[10px] text-stone-400">Direct from farm</p>
                 </div>
               </div>
             </div>
-
           </motion.div>
         </div>
 
-        {/* Reviews Section */}
-        <div className="mt-24 border-t border-white/10 pt-16">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-display font-bold text-white mb-12 text-center">Customer Reviews</h2>
-            
-            {/* Add Review Form */}
-            <div className="bg-stone-900/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 sm:p-8 mb-16 relative overflow-hidden group">
-              {/* Decorative glow */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] -z-10 group-hover:bg-amber-500/10 transition-colors duration-700" />
-              
-              <h3 className="text-xl font-bold text-white mb-6">Write a Review</h3>
-              <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); /* Handle submit */ }}>
-                <div>
-                  <label className="block text-sm font-medium text-stone-400 mb-3">Rating</label>
-                  <div className="flex gap-2">
+        {/* Compact Reviews Section */}
+        <div className="mt-14 pt-10 border-t border-white/10">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-display font-bold text-white">Customer Reviews</h2>
+              <p className="text-xs text-stone-400">Verified feedback from honey lovers</p>
+            </div>
+            <button
+              onClick={() => setShowWriteReview(!showWriteReview)}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-all"
+            >
+              {showWriteReview ? "Close" : "Write Review"}
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {showWriteReview && (
+              <motion.form
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                onSubmit={(e) => { e.preventDefault(); setShowWriteReview(false); }}
+                className="rounded-2xl bg-white/[0.04] border border-white/10 p-5 mb-6 space-y-4 overflow-hidden"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-stone-300">Your Rating</span>
+                  <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <button key={star} type="button" className="text-amber-500 hover:scale-110 transition-transform">
-                        <Star className="w-8 h-8 fill-amber-500/20 hover:fill-amber-500 transition-colors" />
+                      <button key={star} type="button" className="text-amber-400 hover:scale-110 transition-transform">
+                        <Star className="w-5 h-5 fill-amber-400" />
                       </button>
                     ))}
                   </div>
                 </div>
-                <div>
-                  <label htmlFor="review" className="block text-sm font-medium text-stone-300 mb-2">Your Review</label>
-                  <textarea 
-                    id="review" 
-                    rows={4} 
-                    className="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 text-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all resize-y shadow-inner"
-                    placeholder="What did you think about this honey?"
-                  ></textarea>
-                </div>
-                <div className="pt-2 flex justify-center sm:justify-end">
-                  <button type="submit" className="w-full sm:w-auto px-8 py-3 amber-gradient text-stone-900 font-bold rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:-translate-y-0.5 transition-all">
-                    Submit Review
+                <textarea
+                  rows={3}
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-500/50 resize-none"
+                  placeholder="Share your experience..."
+                  required
+                />
+                <div className="flex justify-end">
+                  <button type="submit" className="px-5 py-2 amber-gradient text-stone-950 text-xs font-bold rounded-xl">
+                    Submit
                   </button>
                 </div>
-              </form>
-            </div>
+              </motion.form>
+            )}
+          </AnimatePresence>
 
-            {/* Existing Reviews */}
-            <div className="space-y-6">
-              <div className="bg-stone-900/30 backdrop-blur-sm border border-white/5 rounded-2xl p-6 hover:bg-stone-900/50 transition-colors">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-stone-800 flex items-center justify-center text-stone-400 font-bold text-lg border border-white/10">
-                      AS
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              {
+                initials: "AS",
+                name: "Arjun Sharma",
+                date: "2 days ago",
+                rating: 5,
+                text: "Pure, natural taste. Night and day difference compared to store-bought honey.",
+              },
+              {
+                initials: "PP",
+                name: "Priya Patel",
+                date: "1 week ago",
+                rating: 5,
+                text: "Great packaging and fast delivery. Rich consistency that pairs wonderfully with warm water.",
+              },
+            ].map((r, i) => (
+              <div key={i} className="rounded-2xl bg-white/[0.04] border border-white/10 p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-bold text-xs">
+                      {r.initials}
                     </div>
                     <div>
-                      <h4 className="text-white font-bold">Arjun Sharma</h4>
-                      <span className="text-stone-500 text-sm">2 days ago</span>
+                      <h4 className="text-white text-xs font-semibold">{r.name}</h4>
+                      <span className="text-stone-500 text-[11px]">{r.date}</span>
                     </div>
                   </div>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="w-4 h-4 text-amber-500 fill-amber-500" />
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: r.rating }).map((_, s) => (
+                      <Star key={s} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                     ))}
                   </div>
                 </div>
-                <p className="text-stone-300 leading-relaxed pl-16">
-                  Absolutely amazing quality! The taste is so pure and natural. I've been using this for my morning tea and the difference is night and day compared to store-bought honey. The packaging was also top-notch.
-                </p>
+                <p className="text-stone-300 text-xs leading-relaxed font-light">{r.text}</p>
               </div>
-              
-              <div className="bg-stone-900/30 backdrop-blur-sm border border-white/5 rounded-2xl p-6 hover:bg-stone-900/50 transition-colors">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-stone-800 flex items-center justify-center text-stone-400 font-bold text-lg border border-white/10">
-                      PP
-                    </div>
-                    <div>
-                      <h4 className="text-white font-bold">Priya Patel</h4>
-                      <span className="text-stone-500 text-sm">1 week ago</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4].map((star) => (
-                      <Star key={star} className="w-4 h-4 text-amber-500 fill-amber-500" />
-                    ))}
-                    <Star className="w-4 h-4 text-stone-700 fill-stone-700" />
-                  </div>
-                </div>
-                <p className="text-stone-300 leading-relaxed pl-16">
-                  Very good packaging and fast delivery. The consistency is perfect and it feels very premium. It pairs wonderfully with warm water and lemon. Will definitely order again!
-                </p>
-              </div>
-
-              {showAllReviews && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="bg-stone-900/30 backdrop-blur-sm border border-white/5 rounded-2xl p-6 hover:bg-stone-900/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-stone-800 flex items-center justify-center text-stone-400 font-bold text-lg border border-white/10">
-                        RM
-                      </div>
-                      <div>
-                        <h4 className="text-white font-bold">Rohan Mehta</h4>
-                        <span className="text-stone-500 text-sm">2 weeks ago</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star key={star} className="w-4 h-4 text-amber-500 fill-amber-500" />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-stone-300 leading-relaxed pl-16">
-                    A beautiful product from start to finish. The honey has a very distinct, rich flavor profile that I haven't experienced before. Highly recommend it to anyone looking for genuine organic honey.
-                  </p>
-                </motion.div>
-              )}
-            </div>
-            
-            <div className="mt-8 flex justify-center">
-              <button 
-                onClick={() => setShowAllReviews(!showAllReviews)}
-                className="px-6 py-2 rounded-full border border-white/20 text-stone-300 hover:text-white hover:border-white/40 hover:bg-white/5 transition-all"
-              >
-                {showAllReviews ? "Show Less" : "Show More"}
-              </button>
-            </div>
-            
+            ))}
           </div>
         </div>
-
       </div>
     </div>
   );

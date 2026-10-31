@@ -2,6 +2,8 @@ import { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { OrderProvider } from './context/OrderContext';
+import { WishlistProvider } from './context/WishlistContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import BottomNav from './components/layout/BottomNav';
@@ -15,6 +17,7 @@ const AboutPage = lazy(() => import('./pages/AboutPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const GalleryPage = lazy(() => import('./pages/GalleryPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const OrdersPage = lazy(() => import('./pages/OrdersPage'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -26,7 +29,7 @@ const AdminMessagesPage = lazy(() => import('./pages/admin/AdminMessagesPage'));
 const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettings'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
-// ScrollToTop component to reset window scroll position on route change
+
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -36,18 +39,17 @@ function ScrollToTop() {
 
   return null;
 }
-// Public layout wrapper (for logged-in users)
+
 const PublicLayout = ({ children }: { children: React.ReactNode }) => (
   <>
     <Navbar />
     <CartDrawer />
-    <main className="min-h-screen">{children}</main>
+    <main className="min-h-screen pb-24 md:pb-0">{children}</main>
     <Footer />
     <BottomNav />
   </>
 );
 
-// Admin layout wrapper
 const AdminLayout = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen bg-[#110e07] text-white">
     <AdminSidebar />
@@ -55,7 +57,6 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-// Protected Route wrapper for Admin
 const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { role } = useAuth();
   if (role !== 'admin') {
@@ -64,7 +65,6 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
   return <AdminLayout>{children}</AdminLayout>;
 };
 
-// Protected Route wrapper for Users (admin can also see user pages)
 const ProtectedUserRoute = ({ children }: { children: React.ReactNode }) => {
   const { role } = useAuth();
   if (!role) {
@@ -78,40 +78,45 @@ function App() {
     <BrowserRouter>
       <ScrollToTop />
       <AuthProvider>
-        <CartProvider>
-          <Suspense fallback={<div className="min-h-screen bg-[#0d0a05] flex items-center justify-center font-display text-xl text-amber-500/70 animate-pulse">Loading...</div>}>
-            <Routes>
-              {/* Login/Signup Routes */}
-              <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
-              <Route path="/signup" element={<PublicLayout><SignupPage /></PublicLayout>} />
+        <WishlistProvider>
+          <CartProvider>
+            <OrderProvider>
+              <Suspense fallback={<div className="min-h-screen bg-[#0d0a05] flex items-center justify-center font-display text-xl text-amber-500/70 animate-pulse">Loading...</div>}>
+                <Routes>
+                  {/* Login/Signup Routes */}
+                  <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
+                  <Route path="/signup" element={<PublicLayout><SignupPage /></PublicLayout>} />
 
-              {/* Public Routes */}
-              <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
-              <Route path="/shop" element={<PublicLayout><ShopPage /></PublicLayout>} />
-              <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
-              <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
-              <Route path="/gallery" element={<PublicLayout><GalleryPage /></PublicLayout>} />
+                  {/* Public Routes */}
+                  <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
+                  <Route path="/shop" element={<PublicLayout><ShopPage /></PublicLayout>} />
+                  <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
+                  <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
+                  <Route path="/gallery" element={<PublicLayout><GalleryPage /></PublicLayout>} />
 
-              {/* User Routes (Protected) */}
-              <Route path="/shop/:slug" element={<ProtectedUserRoute><ProductDetailPage /></ProtectedUserRoute>} />
-              <Route path="/checkout" element={<ProtectedUserRoute><CheckoutPage /></ProtectedUserRoute>} />
-              <Route path="/profile" element={<ProtectedUserRoute><ProfilePage /></ProtectedUserRoute>} />
-              <Route path="/wishlist" element={<ProtectedUserRoute><WishlistPage /></ProtectedUserRoute>} />
+                  {/* User Routes (Protected) */}
+                  <Route path="/shop/:slug" element={<ProtectedUserRoute><ProductDetailPage /></ProtectedUserRoute>} />
+                  <Route path="/checkout" element={<ProtectedUserRoute><CheckoutPage /></ProtectedUserRoute>} />
+                  <Route path="/profile" element={<ProtectedUserRoute><ProfilePage /></ProtectedUserRoute>} />
+                  <Route path="/orders" element={<ProtectedUserRoute><OrdersPage /></ProtectedUserRoute>} />
+                  <Route path="/wishlist" element={<ProtectedUserRoute><WishlistPage /></ProtectedUserRoute>} />
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
-              <Route path="/admin/orders" element={<ProtectedAdminRoute><AdminOrdersPage /></ProtectedAdminRoute>} />
-              <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProductsPage /></ProtectedAdminRoute>} />
-              <Route path="/admin/categories" element={<ProtectedAdminRoute><AdminCategoriesPage /></ProtectedAdminRoute>} />
-              <Route path="/admin/gallery" element={<ProtectedAdminRoute><AdminGalleryPage /></ProtectedAdminRoute>} />
-              <Route path="/admin/messages" element={<ProtectedAdminRoute><AdminMessagesPage /></ProtectedAdminRoute>} />
-              <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettingsPage /></ProtectedAdminRoute>} />
+                  {/* Admin Routes */}
+                  <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
+                  <Route path="/admin/orders" element={<ProtectedAdminRoute><AdminOrdersPage /></ProtectedAdminRoute>} />
+                  <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProductsPage /></ProtectedAdminRoute>} />
+                  <Route path="/admin/categories" element={<ProtectedAdminRoute><AdminCategoriesPage /></ProtectedAdminRoute>} />
+                  <Route path="/admin/gallery" element={<ProtectedAdminRoute><AdminGalleryPage /></ProtectedAdminRoute>} />
+                  <Route path="/admin/messages" element={<ProtectedAdminRoute><AdminMessagesPage /></ProtectedAdminRoute>} />
+                  <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettingsPage /></ProtectedAdminRoute>} />
 
-              {/* Catch-all to redirect to login */}
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
-          </Suspense>
-        </CartProvider>
+                  {/* Catch-all to redirect to login */}
+                  <Route path="*" element={<Navigate to="/login" replace />} />
+                </Routes>
+              </Suspense>
+            </OrderProvider>
+          </CartProvider>
+        </WishlistProvider>
       </AuthProvider>
     </BrowserRouter>
   );

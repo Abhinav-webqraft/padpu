@@ -38,7 +38,7 @@ export default function OrderTrackingPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
-              <h1 className="font-display font-bold text-2xl text-gray-900">Order #{order.orderNumber}</h1>
+              <h1 className="font-sans font-bold text-2xl text-gray-900">Order #{order.orderNumber}</h1>
               <p className="text-gray-400 text-sm mt-1">Placed on {new Date(order.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
             </div>
             <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide ${statusColorMap[order.orderStatus]}`}>

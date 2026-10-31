@@ -19,7 +19,6 @@ CREATE TABLE IF NOT EXISTS categories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
 CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     slug VARCHAR(255) NOT NULL UNIQUE,
@@ -30,6 +29,11 @@ CREATE TABLE IF NOT EXISTS products (
     price DECIMAL(10,2) NOT NULL,
     originalPrice DECIMAL(10,2),
     inStock BOOLEAN DEFAULT true,
+    stockQuantity INT DEFAULT 0,
+    rating DECIMAL(2,1) DEFAULT 5.0,
+    reviewCount INT DEFAULT 0,
+    tags JSON,
+    badge VARCHAR(100),
     featured BOOLEAN DEFAULT false,
     weightOptions JSON,
     images LONGTEXT,
@@ -51,6 +55,7 @@ CREATE TABLE IF NOT EXISTS cart_items (
     user_id INT NOT NULL,
     product_id INT NOT NULL,
     weight_label VARCHAR(255) NOT NULL,
+    weight_grams INT DEFAULT 0,
     quantity INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -104,14 +109,11 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-DROP TABLE IF EXISTS settings;
 
-CREATE TABLE settings (
+CREATE TABLE IF NOT EXISTS settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
     phone VARCHAR(50) NOT NULL,
     address TEXT NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
-
-

@@ -112,11 +112,18 @@ router.put('/settings', async (req, res) => {
   try {
     const { email, phone, address } = req.body;
     
-    // Update the first row
-    await pool.query(
+    // Update or insert the first row
+    const [result] = await pool.query(
       'UPDATE settings SET email = ?, phone = ?, address = ? WHERE id = 1',
       [email, phone, address]
     );
+
+    if (result.affectedRows === 0) {
+      await pool.query(
+        'INSERT INTO settings (id, email, phone, address) VALUES (1, ?, ?, ?)',
+        [email, phone, address]
+      );
+    }
     
     res.json({ success: true, message: 'Settings updated' });
   } catch (error) {

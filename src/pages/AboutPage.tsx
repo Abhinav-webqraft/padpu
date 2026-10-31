@@ -1,14 +1,19 @@
-import { useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import AnimatedSection from '../components/ui/AnimatedSection';
-import PollenParticles from '../components/ui/PollenParticles';
+import { motion } from 'framer-motion';
 import { galleryImages } from '../data/mockData';
+import { Leaf, Shield, Globe, Heart } from 'lucide-react';
 
 const timeline = [
-  { year: '1983', title: 'A Single Colony', desc: 'Padpu Farms began with one honey bee colony of the native Apis cerana species in Dakshina Kannada District, Karnataka.' },
-  { year: '1992-93', title: 'A Difficult Pause', desc: 'A severe disease outbreak devastated the apiary after it grew to around 75 colonies, forcing a long and painful break.' },
-  { year: '2003', title: 'Starting Again', desc: 'We restarted with just one bee box and slowly rebuilt the farm through patience, learning, and care.' },
-  { year: '2017', title: 'Padpu Farms Brand', desc: 'The Padpu Farms brand was created to bring authentic natural honey directly from the farm to consumers.' },
+  { year: '1983', title: 'First Colony', desc: 'Started with a single native Apis cerana colony in Dakshina Kannada.' },
+  { year: '1993', title: 'Resilience', desc: 'Overcame a severe outbreak that tested our dedication to beekeeping.' },
+  { year: '2003', title: 'Rebuilding', desc: 'Restarted with one hive, steadily growing through patience and care.' },
+  { year: '2017', title: 'Padpu Farms', desc: 'Launched our brand to bring pure farm honey directly to homes.' },
+];
+
+const values = [
+  { icon: Leaf, title: 'Pure & Natural', desc: 'Traditional harvesting that preserves natural enzymes.' },
+  { icon: Shield, title: 'Bee-Centred', desc: 'Prioritizing colony health, pollination, and biodiversity.' },
+  { icon: Globe, title: 'Western Ghats', desc: 'Foraged across rich medicinal and fruit-bearing landscapes.' },
+  { icon: Heart, title: 'Farm Direct', desc: 'Honest honey straight from our apiaries to your table.' },
 ];
 
 const team = [
@@ -16,322 +21,134 @@ const team = [
     name: 'Ramesh Padpu',
     role: 'Founder & Master Beekeeper',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80',
-    bio: '35 years of beekeeping experience, passed down through generations.',
   },
   {
     name: 'Sunita Devi',
-    role: 'Head of Quality & Extraction',
+    role: 'Quality & Extraction',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
-    bio: 'Ensures every jar meets our exacting standards before it leaves the farm.',
   },
   {
     name: 'Aryan Padpu',
     role: 'Operations & Logistics',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80',
-    bio: 'Keeps everything running smoothly — from hive to doorstep.',
   },
   {
     name: 'Meena Negi',
-    role: 'Customer Relations',
+    role: 'Customer Care',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80',
-    bio: 'Your happiness is her mission. Always here to help.',
   },
 ];
 
-const values = [
-  { emoji: '🌿', title: 'Pure & Natural', desc: 'We harvest honey using traditional methods that protect its natural goodness.' },
-  { emoji: '🐝', title: 'Bee-Centred Care', desc: 'Our work starts with the bees, pollination, biodiversity, and a healthy ecosystem.' },
-  { emoji: '🌍', title: 'Western Ghats Origin', desc: 'Our bees thrive across areca, coconut, rubber, paddy, pepper, medicinal, and fruit-rich landscapes.' },
-  { emoji: '❤️', title: 'Direct From Nature', desc: 'We connect farmers and consumers with honest honey from the land that produces it.' },
-];
-
 export default function AboutPage() {
-  const heroRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: heroScroll } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"]
-  });
-  const quoteOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
-
-  const timelineRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: timelineRef,
-    // Start drawing when timeline top hits center of screen.
-    // Finish drawing completely when timeline bottom hits center of screen.
-    offset: ["start center", "end center"]
-  });
-
-  // Calculate the wave polyline points
-  const waves = 2;
-  // Desktop Wave (amplitude 3) - gently points to the cards
-  const desktopWavePoints = Array.from({ length: 100 }).map((_, i) => {
-    const t = i / 99;
-    const x = 50 - Math.cos((t - 0.125) * Math.PI * 2 * waves) * 3;
-    const y = t * 100;
-    return `${x},${y}`;
-  }).join(" ");
-
-  // Mobile Wave (amplitude 6) - centered for alternating column layout
-  const mobileWaves = 4; // Exactly 4 waves to match the 4 cards
-  const mobileWavePoints = Array.from({ length: 130 }).map((_, i) => {
-    const t = i / 149;
-    const x = 50 + Math.cos((t - 0.155) * Math.PI * 2 * mobileWaves) * 6;
-    const y = t * 300; // extend slightly past 100
-    return `${x},${y}`;
-  }).join(" ");
-
-  // Simple hard cut for progress reveal
-  const clipPath = useTransform(
-    scrollYProgress,
-    (v) => `inset(0 0 ${100 - (v * 100)}% 0)`
-  );
-
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#0f170c]">
-      {/* Faded Background Image Layer */}
-      <div
-        className="absolute inset-0 z-0 opacity-40 pointer-events-none"
-        style={{
-          background: 'url("/scenic-bg.jpeg") center/cover no-repeat fixed',
-        }}
-      />
-      <div className="absolute inset-0 z-0 pointer-events-none bg-gradient-to-b from-[#0f170c]/60 via-transparent to-[#0f170c]" />
+    <div className="min-h-screen forest-bg relative overflow-hidden pt-20 md:pt-28 pb-28 md:pb-16">
+      <div className="absolute top-[10%] left-[-10%] w-[450px] h-[450px] rounded-full bg-amber-500/10 blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-[10%] right-[-10%] w-[450px] h-[450px] rounded-full bg-emerald-500/5 blur-[150px] pointer-events-none" />
 
-      {/* Liquid Glass Ambient Orbs */}
-      <div className="absolute top-[10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-amber-500/10 blur-[150px] pointer-events-none z-0" />
-      <div className="absolute top-[40%] right-[-10%] w-[600px] h-[600px] rounded-full bg-green-500/5 blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-[10%] left-[20%] w-[400px] h-[400px] rounded-full bg-amber-500/5 blur-[150px] pointer-events-none" />
-
-      {/* Cinematic Hero Section */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center pt-32 pb-24 overflow-hidden">
-        <PollenParticles count={15} />
-
-        {/* Intro Quote Card */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
-          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-          style={{ opacity: quoteOpacity }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className="relative max-w-4xl w-full text-center px-4 sm:px-6 lg:px-8 z-20"
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10 space-y-16">
+        {/* Hero */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-2xl mx-auto pt-4"
         >
-          <div className="glass p-10 md:p-14 border border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.15)]">
-            <p className="font-display text-xl md:text-3xl text-white leading-relaxed italic">
-              "Padpu Farms is a journey of resilience, tradition, and pure natural honey — from one bee colony in 1983 to a trusted brand built on patience and care."
-            </p>
-            <p className="text-amber-500 font-semibold mt-6 md:text-lg">— Padpu Farms</p>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Main Hero Text (Second Screen) */}
-      <section className="relative py-24 flex items-center justify-center overflow-hidden">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.5 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10"
-        >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest text-amber-500 border border-amber-500/20 bg-amber-500/10 uppercase mb-5 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
-            ✦ Our Story ✦
+          <span className="inline-block px-3.5 py-1 rounded-full text-[11px] font-semibold tracking-widest text-amber-400 border border-amber-500/20 bg-amber-500/10 uppercase mb-4">
+            Since 1983
           </span>
-          <h1 className="font-display font-bold text-white mb-5" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}>
-            A Journey from Nature,<br />
-            <span className="amber-gradient-text">to Your Table</span>
+          <h1 className="font-display font-bold text-3xl sm:text-5xl text-white mb-4 leading-tight">
+            From Nature <span className="amber-gradient-text">to Your Table</span>
           </h1>
-          <p className="text-gray-400 font-light text-lg max-w-xl mx-auto">
-            Padpu Farms began in 1983 in Dakshina Kannada and continues to share 100% pure, natural honey grown with care, resilience, and respect for nature.
+          <p className="text-stone-400 font-light text-sm sm:text-base leading-relaxed">
+            Born in Dakshina Kannada, Padpu Farms crafts 100% pure, raw honey through ethical beekeeping and deep respect for the Western Ghats.
           </p>
         </motion.div>
-      </section>
 
-      {/* Timeline */}
-      <section className="py-20 relative z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-16">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest text-amber-500 border border-amber-500/20 bg-amber-500/10 uppercase mb-4 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
-              ✦ Our Journey ✦
-            </span>
-            <h2 className="font-display font-bold text-3xl md:text-4xl text-white">Decades of Resilience and Pure Honey</h2>
-          </AnimatedSection>
-
-          <div className="relative grid auto-rows-fr" ref={timelineRef}>
-            {/* Desktop Paths */}
-            <div className="hidden sm:block absolute inset-0 z-0">
-              {/* Faint Background Path */}
-              <svg
-                className="absolute left-0 top-0 bottom-0 w-full overflow-visible pointer-events-none"
-                preserveAspectRatio="none"
-                viewBox="0 0 100 100"
-              >
-                <polyline
-                  points={desktopWavePoints}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.08)"
-                  strokeWidth="2"
-                  vectorEffect="non-scaling-stroke"
-                />
-              </svg>
-
-              {/* Glowing Active Path */}
-              <motion.div
-                className="absolute left-0 top-0 bottom-0 w-full pointer-events-none"
-                style={{ clipPath }}
-              >
-                <svg
-                  className="absolute left-0 top-0 bottom-0 w-full overflow-visible pointer-events-none"
-                  preserveAspectRatio="none"
-                  viewBox="0 0 100 100"
-                >
-                  <polyline
-                    points={desktopWavePoints}
-                    fill="none"
-                    stroke="#f59e0b"
-                    strokeWidth="4"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </svg>
-              </motion.div>
-            </div>
-
-            {/* Mobile Paths - extended downwards to continue the path */}
-            <div className="block sm:hidden absolute top-12 left-0 right-0 -bottom-24 z-0">
-              {/* Faint Background Path */}
-              <svg
-                className="absolute left-0 top-0 bottom-0 w-full overflow-visible pointer-events-none"
-                preserveAspectRatio="none"
-                viewBox="0 0 100 100"
-              >
-                <polyline
-                  points={mobileWavePoints}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.08)"
-                  strokeWidth="2"
-                  vectorEffect="non-scaling-stroke"
-                />
-              </svg>
-
-              {/* Glowing Active Path */}
-              <motion.div
-                className="absolute left-0 top-0 bottom-0 w-full pointer-events-none"
-                style={{ clipPath }}
-              >
-                <svg
-                  className="absolute left-0 top-0 bottom-0 w-full overflow-visible pointer-events-none"
-                  preserveAspectRatio="none"
-                  viewBox="0 0 100 100"
-                >
-                  <polyline
-                    points={mobileWavePoints}
-                    fill="none"
-                    stroke="#f59e0b"
-                    strokeWidth="4"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </svg>
-              </motion.div>
-            </div>
-
+        {/* Timeline Grid */}
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400 text-center mb-6">Our Journey</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {timeline.map((event, i) => (
               <motion.div
-                key={i}
-                initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: i * 0.1 }}
-                viewport={{ once: true }}
-                className={`relative flex items-center gap-3 sm:gap-6 py-6 sm:py-8 flex-row ${i % 2 !== 0 ? 'flex-row-reverse' : ''}`}
-              >
-                <div className={`w-1/2 ${i % 2 === 0 ? 'pr-4 sm:pr-12 text-right' : 'pl-4 sm:pl-12 text-left'}`}>
-                  <div className="glass-light p-4 sm:p-6 hover:shadow-[0_0_20px_rgba(245,158,11,0.1)] transition-shadow">
-                    <span className="text-[10px] sm:text-xs font-bold text-amber-500 uppercase tracking-widest">{event.year}</span>
-                    <h3 className="font-display font-bold text-lg sm:text-xl text-white mt-1 sm:mt-2 mb-2 sm:mb-3">{event.title}</h3>
-                    <p className="text-gray-400 font-light text-xs sm:text-sm leading-relaxed">{event.desc}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Values */}
-      <section className="py-16 relative z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-12">
-            <h2 className="font-display font-bold text-3xl md:text-4xl text-white">What We Stand For</h2>
-          </AnimatedSection>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {values.map((v, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
+                key={event.year}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
+                transition={{ delay: i * 0.06 }}
                 viewport={{ once: true }}
-                className="text-center p-8 glass-card group"
+                className="rounded-2xl bg-white/[0.04] border border-white/10 p-5"
               >
-                <div className="text-5xl mb-4 transform group-hover:scale-110 transition-transform duration-300">{v.emoji}</div>
-                <h3 className="font-display font-bold text-white mb-3 text-lg group-hover:text-amber-400 transition-colors">{v.title}</h3>
-                <p className="text-gray-400 font-light text-sm leading-relaxed">{v.desc}</p>
+                <span className="text-xs font-bold text-amber-400 font-sans">{event.year}</span>
+                <h3 className="font-display font-bold text-base text-white mt-1 mb-1.5">{event.title}</h3>
+                <p className="text-stone-400 font-light text-xs leading-relaxed">{event.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
-      </section>
 
-      {/* Team */}
-      <section className="py-20 relative z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-12">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest text-amber-500 border border-amber-500/20 bg-amber-500/10 uppercase mb-4 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
-              ✦ Our Team ✦
-            </span>
-            <h2 className="font-display font-bold text-3xl md:text-4xl text-white">The People Behind Padpu Farms</h2>
-          </AnimatedSection>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Values */}
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400 text-center mb-6">What We Stand For</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {values.map(({ icon: Icon, title, desc }, i) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06 }}
+                viewport={{ once: true }}
+                className="rounded-2xl bg-white/[0.04] border border-white/10 p-5 text-center"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3 text-amber-400">
+                  <Icon className="w-5 h-5" />
+                </div>
+                <h3 className="font-display font-bold text-white text-sm mb-1">{title}</h3>
+                <p className="text-stone-400 font-light text-xs leading-relaxed">{desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Team */}
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400 text-center mb-6">Our Team</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {team.map((member, i) => (
               <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
+                key={member.name}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
+                transition={{ delay: i * 0.06 }}
                 viewport={{ once: true }}
-                className="glass-card p-6 text-center"
+                className="rounded-2xl bg-white/[0.04] border border-white/10 p-5 text-center"
               >
-                <div className="w-24 h-24 rounded-2xl overflow-hidden mx-auto mb-4 ring-2 ring-amber-500/30">
+                <div className="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-3 border border-amber-500/30">
                   <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" loading="lazy" />
                 </div>
-                <h3 className="font-display font-bold text-white mb-1 text-lg">{member.name}</h3>
-                <p className="text-amber-500 text-xs font-semibold uppercase tracking-wider mb-3">{member.role}</p>
-                <p className="text-gray-400 font-light text-sm leading-relaxed">{member.bio}</p>
+                <h3 className="font-display font-bold text-white text-sm">{member.name}</h3>
+                <p className="text-amber-400 text-[10px] font-semibold uppercase tracking-wider mt-0.5">{member.role}</p>
               </motion.div>
             ))}
           </div>
         </div>
-      </section>
 
-      {/* Farm images */}
-      <section className="py-20 relative z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-10">
-            <h2 className="font-display font-bold text-3xl text-white">Life in the Western Ghats</h2>
-          </AnimatedSection>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 lg:gap-6">
+        {/* Farm Glimpse */}
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400 text-center mb-6">Life at the Farm</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {galleryImages.slice(0, 6).map((img, i) => (
               <motion.div
                 key={img.id}
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
-                transition={{ delay: i * 0.07 }}
+                transition={{ delay: i * 0.05 }}
                 viewport={{ once: true }}
-                className="rounded-3xl overflow-hidden aspect-square border border-white/10"
+                className="rounded-2xl overflow-hidden aspect-[4/3] border border-white/10"
               >
-                <img src={img.url} alt={img.title} className="w-full h-full object-cover hover:scale-110 transition-transform duration-700" loading="lazy" />
+                <img src={img.url} alt={img.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy" />
               </motion.div>
             ))}
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

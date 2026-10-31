@@ -240,7 +240,7 @@ router.get('/', async (req, res) => {
       const [items] = await pool.query(
         `SELECT oi.*, p.name as product_name, p.images as product_images 
          FROM order_items oi 
-         JOIN products p ON oi.product_id = p.id 
+         LEFT JOIN products p ON oi.product_id = p.id 
          WHERE oi.order_id = ?`,
         [order.id]
       );
@@ -268,12 +268,22 @@ router.get('/', async (req, res) => {
 
 router.get('/my-orders', async (req, res) => {
   try {
-    const { userId } = req.query;
-    if (!userId) {
-      return res.status(400).json({ message: 'UserId is required' });
+    const { userId, email } = req.query;
+    if (!userId && !email) {
+      return res.status(400).json({ message: 'UserId or email is required' });
     }
     
-    const [orders] = await pool.query('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC', [userId]);
+    let query = 'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC';
+    let params = [userId];
+    if (email && userId) {
+      query = 'SELECT * FROM orders WHERE user_id = ? OR customerEmail = ? ORDER BY created_at DESC';
+      params = [userId, email];
+    } else if (email) {
+      query = 'SELECT * FROM orders WHERE customerEmail = ? ORDER BY created_at DESC';
+      params = [email];
+    }
+    
+    const [orders] = await pool.query(query, params);
     
     for (const order of orders) {
       if (typeof order.shippingAddress === 'string') {
@@ -291,23 +301,31 @@ router.get('/my-orders', async (req, res) => {
       const [items] = await pool.query(
         `SELECT oi.*, p.name as product_name, p.images as product_images 
          FROM order_items oi 
-         JOIN products p ON oi.product_id = p.id 
+         LEFT JOIN products p ON oi.product_id = p.id 
          WHERE oi.order_id = ?`,
         [order.id]
       );
       
-      order.items = items.map(item => ({
-        product: {
-          id: item.product_id.toString(),
-          name: item.product_name,
-          images: item.product_images ? JSON.parse(item.product_images) : []
-        },
-        selectedWeight: {
-          label: item.weight_label,
-          price: parseFloat(item.price) || 0
-        },
-        quantity: item.quantity
-      }));
+      order.items = items.map(item => {
+        let imgs = [];
+        try {
+          imgs = typeof item.product_images === 'string' ? JSON.parse(item.product_images) : (item.product_images || []);
+        } catch (e) {
+          imgs = [];
+        }
+        return {
+          product: {
+            id: item.product_id ? item.product_id.toString() : '',
+            name: item.product_name || 'Pure Honey',
+            images: Array.isArray(imgs) ? imgs : []
+          },
+          selectedWeight: {
+            label: item.weight_label || '500g',
+            price: parseFloat(item.price) || 0
+          },
+          quantity: item.quantity
+        };
+      });
     }
     
     res.json(orders);

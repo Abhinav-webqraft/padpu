@@ -17,6 +17,7 @@ interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
   login: (identifier: string, password: string) => Promise<Role>;
+  loginWithToken: (token: string, role?: Role) => void;
   register: (name: string, phonenumber: string, email: string, password: string) => Promise<void>;
   updateProfile: (data: Partial<UserProfile> & { password?: string }) => Promise<void>;
   logout: () => void;
@@ -70,6 +71,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return data.role;
   };
 
+  const loginWithToken = (newToken: string, newRole: Role = 'user') => {
+    setToken(newToken);
+    setRole(newRole);
+    localStorage.setItem('token', newToken);
+    if (newRole) localStorage.setItem('userRole', newRole);
+  };
+
   const register = async (name: string, phonenumber: string, email: string, password: string) => {
     const res = await fetch('http://localhost:5000/api/auth/signup', {
       method: 'POST',
@@ -105,7 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ role, user, token, login, register, updateProfile, logout }}>
+    <AuthContext.Provider value={{ role, user, token, login, loginWithToken, register, updateProfile, logout }}>
       {children}
     </AuthContext.Provider>
   );
