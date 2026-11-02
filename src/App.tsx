@@ -92,12 +92,12 @@ function App() {
                   {/* Public Routes */}
                   <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
                   <Route path="/shop" element={<PublicLayout><ShopPage /></PublicLayout>} />
+                  <Route path="/shop/:slug" element={<PublicLayout><ProductDetailPage /></PublicLayout>} />
                   <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
                   <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
                   <Route path="/gallery" element={<PublicLayout><GalleryPage /></PublicLayout>} />
 
                   {/* User Routes (Protected) */}
-                  <Route path="/shop/:slug" element={<ProtectedUserRoute><ProductDetailPage /></ProtectedUserRoute>} />
                   <Route path="/checkout" element={<ProtectedUserRoute><CheckoutPage /></ProtectedUserRoute>} />
                   <Route path="/profile" element={<ProtectedUserRoute><ProfilePage /></ProtectedUserRoute>} />
                   <Route path="/orders" element={<ProtectedUserRoute><OrdersPage /></ProtectedUserRoute>} />

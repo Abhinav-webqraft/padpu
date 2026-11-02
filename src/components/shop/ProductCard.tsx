@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, Heart } from "lucide-react";
+import { ShoppingCart, Heart, Star } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
@@ -17,6 +17,8 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
   const { isWishlisted, toggleWishlist } = useWishlist();
   const defaultWeight = product.weightOptions[0];
   const saved = isWishlisted(product.id);
+  const rating = product.rating ?? product.avgRating ?? 0;
+  const reviewCount = product.reviewCount ?? 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -38,7 +40,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
 
       {/* Image */}
       <Link
-        to={role ? `/shop/${product.slug}` : "/login"}
+        to={`/shop/${product.slug}`}
         className="relative aspect-[4/3] overflow-hidden block bg-black/20"
       >
         <img
@@ -79,11 +81,31 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         </div>
 
         <Link
-          to={role ? `/shop/${product.slug}` : "/login"}
-          className="block mb-1.5 group-hover:text-amber-400 transition-colors"
+          to={`/shop/${product.slug}`}
+          className="block mb-1 group-hover:text-amber-400 transition-colors"
         >
           <h3 className="font-semibold text-white text-sm line-clamp-1">{product.name}</h3>
         </Link>
+
+        {/* Dynamic Rating */}
+        <div className="flex items-center gap-1.5 mb-2">
+          {rating > 0 ? (
+            <>
+              <div className="flex items-center gap-0.5 text-amber-400">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span className="text-xs font-bold text-white font-sans">{rating.toFixed(1)}</span>
+              </div>
+              <span className="text-[10px] text-stone-400 font-sans">
+                ({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})
+              </span>
+            </>
+          ) : (
+            <span className="text-[10px] text-stone-500 font-sans flex items-center gap-1">
+              <Star className="w-3 h-3 text-stone-600" />
+              No reviews yet
+            </span>
+          )}
+        </div>
 
         <p className="text-xs text-stone-400 mb-3 line-clamp-1 flex-grow font-light">
           {product.shortDescription}
@@ -108,9 +130,9 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           ) : (
             <Link
               to="/login"
-              className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition-colors"
+              className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] font-semibold text-amber-400 hover:bg-amber-500/20 transition-all"
             >
-              Sign in →
+              Sign in to Buy
             </Link>
           )}
         </div>

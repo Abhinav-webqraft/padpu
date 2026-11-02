@@ -13,12 +13,6 @@ export default function AdminProducts() {
     p.category.toLowerCase().includes(search.toLowerCase())
   );
 
-  const stockStatus = (qty: number) => {
-    if (qty === 0) return { label: 'Out of Stock', class: 'text-red-400 bg-red-500/10' };
-    if (qty < 50) return { label: 'Low Stock', class: 'text-yellow-400 bg-yellow-500/10' };
-    return { label: 'In Stock', class: 'text-green-400 bg-green-500/10' };
-  };
-
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-5">
       {/* Header */}
@@ -53,7 +47,6 @@ export default function AdminProducts() {
                 <th>Product</th>
                 <th>Category</th>
                 <th>Price</th>
-                <th>Stock</th>
                 <th>Rating</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -61,7 +54,8 @@ export default function AdminProducts() {
             </thead>
             <tbody>
               {filtered.map((product, i) => {
-                const stock = stockStatus(product.stockQuantity);
+                const rating = product.rating ?? product.avgRating ?? 0;
+                const reviewCount = product.reviewCount ?? 0;
                 return (
                   <motion.tr
                     key={product.id}
@@ -76,21 +70,19 @@ export default function AdminProducts() {
                         </div>
                         <div>
                           <div className="text-white/80 font-medium text-sm">{product.name}</div>
-                          {product.badge && (
-                            <span className="text-[10px] text-amber-400 font-medium">{product.badge}</span>
-                          )}
                         </div>
                       </div>
                     </td>
                     <td>{product.category}</td>
                     <td className="text-white font-semibold">₹{product.price}</td>
-                    <td>{product.stockQuantity}</td>
                     <td>
-                      <span className="text-amber-400">★</span> {product.rating}
-                      <span className="text-white/30 text-xs ml-1">({product.reviewCount})</span>
+                      <span className="text-amber-400">★</span> {rating > 0 ? rating.toFixed(1) : 'New'}
+                      <span className="text-white/30 text-xs ml-1">({reviewCount})</span>
                     </td>
                     <td>
-                      <span className={`badge ${stock.class}`}>{stock.label}</span>
+                      <span className={`badge ${product.inStock ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10'}`}>
+                        {product.inStock ? 'In Stock' : 'Out of Stock'}
+                      </span>
                     </td>
                     <td>
                       <div className="flex items-center gap-2">

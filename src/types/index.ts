@@ -13,15 +13,26 @@ export interface Product {
   price: number;
   originalPrice?: number;
   category: string;
-  tags: string[];
   images: string[];
   weightOptions: WeightOption[];
   inStock: boolean;
-  stockQuantity: number;
-  rating: number;
-  reviewCount: number;
   featured: boolean;
+  rating?: number;
+  avgRating?: number;
+  reviewCount?: number;
+  stockQuantity?: number;
+  tags?: string[];
   badge?: string;
+}
+
+export interface ProductReview {
+  id: number;
+  product_id?: number;
+  user_id?: number;
+  user_name: string;
+  rating: number;
+  review_text: string;
+  created_at: string;
 }
 
 export interface GalleryImage {

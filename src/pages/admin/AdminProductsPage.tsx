@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Product } from '../../types';
 import { Plus, Edit2, Trash2, X, Check, Search, Upload, AlertCircle, Package } from 'lucide-react';
 
-const WEIGHT_LABELS = ['250g', '500g', '1kg', '3×250g', '3×500g', 'Complete Set'];
+const WEIGHT_LABELS = ['250g', '500g', '1kg', '3Ã—250g', '3Ã—500g', 'Complete Set'];
 
 type WeightOption = { label: string; price: number; grams: number };
 type NewProduct = {
   name: string; shortDescription: string; description: string;
   category: string; price: number; originalPrice: number;
-  inStock: boolean; stockQuantity: number; featured: boolean;
+  inStock: boolean; featured: boolean;
   weightOptions: WeightOption[]; images: string[];
 };
 
@@ -24,7 +24,7 @@ type FormErrors = {
 const BLANK: NewProduct = {
   name: '', shortDescription: '', description: '',
   category: 'Pure Honey', price: 0, originalPrice: 0,
-  inStock: true, stockQuantity: 0, featured: false,
+  inStock: true, featured: false,
   weightOptions: [{ label: '250g', price: 0, grams: 250 }],
   images: ['/images/300G MULTI.png'],
 };
@@ -79,7 +79,7 @@ export default function AdminProductsPage() {
       name: p.name, shortDescription: p.shortDescription,
       description: p.description, category: p.category,
       price: p.price, originalPrice: p.originalPrice || 0,
-      inStock: p.inStock, stockQuantity: p.stockQuantity,
+      inStock: p.inStock,
       featured: p.featured, weightOptions: [...p.weightOptions],
       images: [...p.images],
     });
@@ -613,3 +613,4 @@ export default function AdminProductsPage() {
     </div>
   );
 }
+

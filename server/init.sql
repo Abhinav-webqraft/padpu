@@ -29,16 +29,23 @@ CREATE TABLE IF NOT EXISTS products (
     price DECIMAL(10,2) NOT NULL,
     originalPrice DECIMAL(10,2),
     inStock BOOLEAN DEFAULT true,
-    stockQuantity INT DEFAULT 0,
-    rating DECIMAL(2,1) DEFAULT 5.0,
-    reviewCount INT DEFAULT 0,
-    tags JSON,
-    badge VARCHAR(100),
     featured BOOLEAN DEFAULT false,
     weightOptions JSON,
     images LONGTEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_name) REFERENCES categories(name) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    user_id INT NOT NULL,
+    rating TINYINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    review_text TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_review (product_id, user_id),
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS gallery (

@@ -3,6 +3,8 @@ import { X, ShoppingCart, Heart, Star } from 'lucide-react';
 import { Product } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
+import { useAuth } from '../../context/AuthContext';
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 
 interface QuickViewProps {
@@ -14,11 +16,14 @@ export default function QuickView({ product, onClose }: QuickViewProps) {
   const [selectedWeight, setSelectedWeight] = useState(0);
   const { addItem } = useCart();
   const { isWishlisted, toggleWishlist } = useWishlist();
+  const { role } = useAuth();
 
   if (!product) return null;
 
-  const weight = product.weightOptions[selectedWeight];
+  const weight = product.weightOptions[selectedWeight] || product.weightOptions[0];
   const wishlisted = isWishlisted(product.id);
+  const rating = product.rating ?? product.avgRating ?? 0;
+  const reviewCount = product.reviewCount ?? 0;
 
   return (
     <AnimatePresence>
@@ -52,10 +57,12 @@ export default function QuickView({ product, onClose }: QuickViewProps) {
               <div className="flex items-center gap-2">
                 <div className="flex">
                   {[1,2,3,4,5].map(n => (
-                    <Star key={n} className={`w-3.5 h-3.5 ${n <= Math.round(product.rating) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                    <Star key={n} className={`w-3.5 h-3.5 ${n <= Math.round(rating) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
                   ))}
                 </div>
-                <span className="text-xs text-gray-500">{product.rating} ({product.reviewCount})</span>
+                <span className="text-xs text-gray-500 font-sans">
+                  {rating > 0 ? rating.toFixed(1) : 'New'} ({reviewCount})
+                </span>
               </div>
               <p className="text-sm text-gray-500 leading-relaxed">{product.shortDescription}</p>
 
@@ -74,21 +81,32 @@ export default function QuickView({ product, onClose }: QuickViewProps) {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="font-sans font-bold text-2xl text-gray-900">₹{weight.price}</span>
+                <span className="font-sans font-bold text-2xl text-gray-900">₹{weight?.price}</span>
                 {product.originalPrice && (
                   <span className="text-gray-400 line-through text-sm">₹{product.originalPrice}</span>
                 )}
               </div>
 
               <div className="flex gap-2 mt-auto">
-                <button
-                  onClick={() => { addItem(product, weight); onClose(); }}
-                  disabled={!product.inStock}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-amber-950"
-                  style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)' }}
-                >
-                  <ShoppingCart className="w-4 h-4" /> Add to Cart
-                </button>
+                {role ? (
+                  <button
+                    onClick={() => { if (weight) addItem(product, weight); onClose(); }}
+                    disabled={!product.inStock}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-amber-950"
+                    style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)' }}
+                  >
+                    <ShoppingCart className="w-4 h-4" /> Add to Cart
+                  </button>
+                ) : (
+                  <Link
+                    to="/login"
+                    onClick={onClose}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-amber-950 text-center"
+                    style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)' }}
+                  >
+                    <ShoppingCart className="w-4 h-4" /> Sign In to Add to Cart
+                  </Link>
+                )}
                 <button
                   onClick={() => toggleWishlist(product)}
                   className="p-3 rounded-xl border border-gray-200 hover:border-red-300 transition-colors"

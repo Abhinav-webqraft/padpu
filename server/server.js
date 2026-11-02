@@ -1,12 +1,16 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import path from 'path';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import pool from './db.js';
 import { verifyToken } from './middleware/auth.js';
 
-dotenv.config();
+// Always load .env from the server directory, regardless of CWD
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -19,6 +23,7 @@ import productsRoutes from './routes/products.js';
 import cartRoutes from './routes/cart.js';
 import ordersRoutes from './routes/orders.js';
 import adminRoutes from './routes/admin.js';
+import reviewsRoutes from './routes/reviews.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
@@ -26,6 +31,7 @@ app.use('/api/products', productsRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reviews', reviewsRoutes);
 
 // Categories Routes
 app.get('/api/categories', async (req, res) => {
