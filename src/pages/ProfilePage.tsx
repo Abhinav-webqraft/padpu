@@ -20,6 +20,7 @@ import {
   Shield,
   ArrowUpRight,
   ShoppingBag,
+  AlertCircle,
 } from 'lucide-react';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -38,7 +39,7 @@ export default function ProfilePage() {
   const { wishlistItems } = useWishlist();
 
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [updateData, setUpdateData] = useState({ name: '', email: '', location: '', password: '' });
+  const [updateData, setUpdateData] = useState({ name: '', email: '', phonenumber: '', location: '', password: '' });
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState('');
   const [updateSuccess, setUpdateSuccess] = useState('');
@@ -54,7 +55,13 @@ export default function ProfilePage() {
 
   const handleOpenUpdateModal = () => {
     if (user) {
-      setUpdateData({ name: user.name, email: user.email, location: user.location || '', password: '' });
+      setUpdateData({
+        name: user.name || '',
+        email: user.email || '',
+        phonenumber: user.phonenumber || '',
+        location: user.location || '',
+        password: '',
+      });
     }
     setUpdateError('');
     setUpdateSuccess('');
@@ -74,6 +81,13 @@ export default function ProfilePage() {
       setUpdateError('Please enter a valid email address');
       return;
     }
+    if (updateData.phonenumber && updateData.phonenumber.trim()) {
+      const cleanPhone = updateData.phonenumber.trim().replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        setUpdateError('Phone number must be 10 digits');
+        return;
+      }
+    }
     if (updateData.password && updateData.password.length < 6) {
       setUpdateError('New password must be at least 6 characters');
       return;
@@ -82,10 +96,11 @@ export default function ProfilePage() {
     setIsUpdating(true);
     try {
       await updateProfile({
-        ...updateData,
         name: updateData.name.trim(),
         email: updateData.email.trim(),
+        phonenumber: updateData.phonenumber.trim() || undefined,
         location: updateData.location.trim(),
+        password: updateData.password || undefined,
       });
       setUpdateSuccess('Saved!');
       setTimeout(() => setShowUpdateModal(false), 1200);
@@ -105,6 +120,31 @@ export default function ProfilePage() {
       <div className="absolute bottom-0 right-[-10%] w-[400px] h-[400px] rounded-full bg-emerald-500/5 blur-[140px] pointer-events-none z-0" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 space-y-5">
+        {/* Missing Phone Number Alert Banner */}
+        {!user?.phonenumber && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-white text-xs font-semibold">Complete your profile</p>
+                <p className="text-stone-400 text-[11px]">Add your phone number for smooth order tracking and delivery coordination.</p>
+              </div>
+            </div>
+            <button
+              onClick={handleOpenUpdateModal}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold text-stone-950 amber-gradient hover:opacity-95 shrink-0"
+            >
+              Add Phone
+            </button>
+          </motion.div>
+        )}
+
         {/* Top Hero Card */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -112,9 +152,17 @@ export default function ProfilePage() {
           className="rounded-3xl bg-white/[0.04] border border-white/10 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6"
         >
           <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
-            <div className="w-20 h-20 rounded-2xl amber-gradient flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.25)] shrink-0">
-              <User className="w-9 h-9 text-stone-950" />
-            </div>
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt={userName}
+                className="w-20 h-20 rounded-2xl object-cover border border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.25)] shrink-0"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-2xl amber-gradient flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.25)] shrink-0">
+                <User className="w-9 h-9 text-stone-950" />
+              </div>
+            )}
             <div>
               <div className="flex items-center justify-center sm:justify-start gap-2.5">
                 <h1 className="font-display font-bold text-2xl sm:text-3xl text-white">{userName}</h1>
@@ -126,10 +174,17 @@ export default function ProfilePage() {
               </div>
               <p className="text-stone-400 text-sm mt-0.5">{userEmail}</p>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3 text-xs text-stone-400">
-                {user?.phonenumber && (
+                {user?.phonenumber ? (
                   <span className="inline-flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-amber-400/80" /> {user.phonenumber}
                   </span>
+                ) : (
+                  <button
+                    onClick={handleOpenUpdateModal}
+                    className="inline-flex items-center gap-1.5 text-amber-400 hover:underline text-xs"
+                  >
+                    <Phone className="w-3.5 h-3.5" /> + Add Phone
+                  </button>
                 )}
                 {user?.location && (
                   <span className="inline-flex items-center gap-1.5">
@@ -207,136 +262,124 @@ export default function ProfilePage() {
 
           <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-4 sm:p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs text-stone-400 font-medium mb-1">Spent</p>
+              <p className="text-xs text-stone-400 font-medium mb-1">Total Spent</p>
               <p className="font-sans font-bold text-xl sm:text-2xl text-amber-400">₹{totalSpent.toFixed(0)}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 hidden sm:flex">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
               <CreditCard className="w-5 h-5" />
             </div>
           </div>
         </motion.div>
 
-        {/* Two-Column Grid: Account Details & Recent Orders */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
-          {/* Account Info */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="md:col-span-2 rounded-3xl bg-white/[0.04] border border-white/10 p-6 flex flex-col justify-between"
+        {/* Quick Links / Navigation Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+        >
+          <Link
+            to="/orders"
+            className="rounded-2xl bg-white/[0.04] border border-white/10 hover:border-amber-500/30 p-4 flex items-center justify-between group transition-all"
           >
+            <div className="flex items-center gap-3.5">
+              <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-stone-300 group-hover:text-amber-400 transition-colors">
+                <Package className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-white text-xs font-semibold group-hover:text-amber-400 transition-colors">Order History</p>
+                <p className="text-stone-500 text-[11px]">Track and view your past orders</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-stone-500 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all" />
+          </Link>
+
+          <Link
+            to="/shop"
+            className="rounded-2xl bg-white/[0.04] border border-white/10 hover:border-amber-500/30 p-4 flex items-center justify-between group transition-all"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-stone-300 group-hover:text-amber-400 transition-colors">
+                <ShoppingBag className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-white text-xs font-semibold group-hover:text-amber-400 transition-colors">Browse Products</p>
+                <p className="text-stone-500 text-[11px]">Explore 100% raw honey harvests</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-stone-500 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all" />
+          </Link>
+        </motion.div>
+
+        {/* Recent Orders Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="rounded-3xl bg-white/[0.04] border border-white/10 p-6 sm:p-7 space-y-4"
+        >
+          <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400">Details</h2>
-                <button
-                  onClick={handleOpenUpdateModal}
-                  className="text-xs text-amber-400 hover:text-amber-300 font-medium"
-                >
-                  Change
-                </button>
-              </div>
-              <div className="space-y-3.5 text-sm">
-                {[
-                  { icon: User, label: 'Name', value: userName },
-                  { icon: Mail, label: 'Email', value: userEmail },
-                  { icon: Phone, label: 'Phone', value: user?.phonenumber || 'Not set' },
-                  { icon: MapPin, label: 'Location', value: user?.location || 'Not set' },
-                ].map(({ icon: Icon, label, value }) => (
-                  <div key={label} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 gap-3">
-                    <span className="text-stone-400 flex items-center gap-2 text-xs">
-                      <Icon className="w-3.5 h-3.5 text-amber-500/70" />
-                      {label}
-                    </span>
-                    <span className="text-stone-200 font-medium text-xs truncate max-w-[160px]">{value}</span>
-                  </div>
-                ))}
-              </div>
+              <h2 className="font-display font-bold text-lg text-white">Recent Orders</h2>
+              <p className="text-stone-400 text-xs mt-0.5">Your latest deliveries</p>
             </div>
-
-            <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
-              <Link
-                to="/shop"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400 hover:text-amber-300"
-              >
-                <ShoppingBag className="w-3.5 h-3.5" /> Browse Shop
-              </Link>
-              <Link
-                to="/contact"
-                className="inline-flex items-center gap-1 text-xs text-stone-400 hover:text-white"
-              >
-                Support <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </motion.div>
-
-          {/* Recent Orders */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="md:col-span-3 rounded-3xl bg-white/[0.04] border border-white/10 p-6 flex flex-col"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400">Recent Orders</h2>
+            {orders.length > 0 && (
               <Link
                 to="/orders"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-amber-400 hover:text-amber-300"
+                className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
               >
-                View All <ChevronRight className="w-3.5 h-3.5" />
+                View all <ArrowUpRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
+          </div>
+
+          {loadingOrders ? (
+            <div className="py-8 text-center text-stone-500 text-xs">Loading orders...</div>
+          ) : orders.length === 0 ? (
+            <div className="py-8 text-center space-y-2">
+              <Package className="w-8 h-8 text-stone-600 mx-auto" />
+              <p className="text-stone-400 text-xs">No orders yet</p>
+              <Link
+                to="/shop"
+                className="inline-block mt-2 px-4 py-2 rounded-xl text-xs font-semibold text-stone-950 amber-gradient"
+              >
+                Start Shopping
               </Link>
             </div>
-
-            {loadingOrders ? (
-              <div className="flex-1 flex items-center justify-center py-10 text-stone-500 text-xs">
-                Loading orders...
-              </div>
-            ) : recentOrders.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
-                <Package className="w-8 h-8 text-stone-600 mb-2" />
-                <p className="text-stone-400 text-sm font-medium">No orders yet</p>
+          ) : (
+            <div className="space-y-2.5">
+              {recentOrders.map((order) => (
                 <Link
-                  to="/shop"
-                  className="mt-3 px-4 py-2 rounded-xl amber-gradient text-stone-950 font-bold text-xs"
+                  key={order.id}
+                  to="/orders"
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 transition-all group"
                 >
-                  Shop Honey
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-2.5 flex-1">
-                {recentOrders.map((order) => (
-                  <Link
-                    key={order.id}
-                    to="/orders"
-                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 hover:border-amber-500/20 transition-all group"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <img
-                        src={order.items[0]?.product?.images?.[0] || '/images/300G MULTI.png'}
-                        alt=""
-                        className="w-11 h-11 rounded-xl object-cover bg-stone-900 border border-white/10 shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-white font-semibold text-xs font-sans">#{order.orderNumber}</p>
-                          <span className={`text-[10px] font-semibold border rounded-full px-2 py-0.5 capitalize ${STATUS_STYLES[order.orderStatus] || STATUS_STYLES.confirmed}`}>
-                            {order.orderStatus}
-                          </span>
-                        </div>
-                        <p className="text-stone-400 text-[11px] mt-0.5 truncate">
-                          {order.items.length} {order.items.length === 1 ? 'item' : 'items'} • {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                        </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                      <Package className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white text-xs font-bold font-sans">#{order.orderNumber}</span>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_STYLES[order.orderStatus] || 'bg-white/5 text-stone-300'}`}>
+                          {order.orderStatus}
+                        </span>
                       </div>
+                      <p className="text-stone-500 text-[11px] font-sans mt-0.5">
+                        {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} • {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-amber-400 font-bold text-sm font-sans">₹{order.total.toFixed(0)}</span>
-                      <ChevronRight className="w-4 h-4 text-stone-500 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-amber-400 font-bold text-sm font-sans">₹{order.total.toFixed(0)}</span>
+                    <ChevronRight className="w-4 h-4 text-stone-500 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </motion.div>
       </div>
 
       {/* Edit Profile Modal */}
@@ -385,6 +428,17 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div>
+                  <label className="block text-[11px] font-semibold text-stone-400 mb-1 uppercase tracking-wider">Phone Number</label>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    value={updateData.phonenumber}
+                    onChange={e => setUpdateData({ ...updateData, phonenumber: e.target.value.replace(/\D/g, '') })}
+                    placeholder="10-digit mobile number"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-amber-500/50 font-sans"
+                  />
+                </div>
+                <div>
                   <label className="block text-[11px] font-semibold text-stone-400 mb-1 uppercase tracking-wider">Location</label>
                   <input
                     type="text"
@@ -395,12 +449,12 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-stone-400 mb-1 uppercase tracking-wider">New Password</label>
+                  <label className="block text-[11px] font-semibold text-stone-400 mb-1 uppercase tracking-wider">New Password (optional)</label>
                   <input
                     type="password"
                     value={updateData.password}
                     onChange={e => setUpdateData({ ...updateData, password: e.target.value })}
-                    placeholder="Optional"
+                    placeholder="Leave blank to keep existing"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-amber-500/50"
                   />
                 </div>

@@ -2,14 +2,24 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 type Role = 'admin' | 'user' | null;
 
-interface UserProfile {
+export interface UserProfile {
   id: number;
   name: string;
   email: string;
-  phonenumber: string;
+  phonenumber: string | null;
   location: string | null;
+  avatar?: string | null;
   role: Role;
   created_at?: string;
+}
+
+export interface GoogleAuthResult {
+  requiresLink?: boolean;
+  requiresPhone?: boolean;
+  email?: string;
+  name?: string;
+  role?: Role;
+  message?: string;
 }
 
 interface AuthContextType {
@@ -17,7 +27,9 @@ interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
   login: (identifier: string, password: string) => Promise<Role>;
-  loginWithToken: (token: string, role?: Role) => void;
+  loginWithToken: (token: string, role?: Role, user?: UserProfile) => void;
+  googleAuth: (credential: string) => Promise<GoogleAuthResult>;
+  linkGoogleAccount: (credential: string, password: string) => Promise<Role>;
   register: (name: string, phonenumber: string, email: string, password: string) => Promise<void>;
   updateProfile: (data: Partial<UserProfile> & { password?: string }) => Promise<void>;
   logout: () => void;
@@ -66,14 +78,65 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setToken(data.token);
     setRole(data.role);
+    if (data.user) setUser(data.user);
     localStorage.setItem('token', data.token);
     localStorage.setItem('userRole', data.role);
     return data.role;
   };
 
-  const loginWithToken = (newToken: string, newRole: Role = 'user') => {
+  const googleAuth = async (credential: string): Promise<GoogleAuthResult> => {
+    const res = await fetch('http://localhost:5000/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Google authentication failed');
+
+    if (data.requiresLink) {
+      return {
+        requiresLink: true,
+        email: data.email,
+        name: data.name,
+        message: data.message
+      };
+    }
+
+    setToken(data.token);
+    setRole(data.role);
+    if (data.user) setUser(data.user);
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('userRole', data.role);
+
+    return {
+      requiresPhone: data.requiresPhone,
+      role: data.role,
+      email: data.user?.email,
+      name: data.user?.name
+    };
+  };
+
+  const linkGoogleAccount = async (credential: string, password: string): Promise<Role> => {
+    const res = await fetch('http://localhost:5000/api/auth/google/link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Account linking failed');
+
+    setToken(data.token);
+    setRole(data.role);
+    if (data.user) setUser(data.user);
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('userRole', data.role);
+    return data.role;
+  };
+
+  const loginWithToken = (newToken: string, newRole: Role = 'user', newUser?: UserProfile) => {
     setToken(newToken);
     setRole(newRole);
+    if (newUser) setUser(newUser);
     localStorage.setItem('token', newToken);
     if (newRole) localStorage.setItem('userRole', newRole);
   };
@@ -113,7 +176,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ role, user, token, login, loginWithToken, register, updateProfile, logout }}>
+    <AuthContext.Provider value={{
+      role,
+      user,
+      token,
+      login,
+      loginWithToken,
+      googleAuth,
+      linkGoogleAccount,
+      register,
+      updateProfile,
+      logout
+    }}>
       {children}
     </AuthContext.Provider>
   );
