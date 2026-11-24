@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, ShoppingBag, Package, Info, Phone, User } from 'lucide-react';
+import { Home, ShoppingBag, Package, Info, Phone, Image } from 'lucide-react';
 import { useOrders } from '../../context/OrderContext';
 
 const navItems = [
@@ -8,7 +8,7 @@ const navItems = [
   { href: '/orders', label: 'Orders', Icon: Package, badgeKey: 'orders' },
   { href: '/about', label: 'About', Icon: Info },
   { href: '/contact', label: 'Contact', Icon: Phone },
-  { href: '/profile', label: 'Profile', Icon: User },
+  { href: '/gallery', label: 'Gallery', Icon: Image },
 ];
 
 export default function BottomNav() {

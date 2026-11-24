@@ -13,8 +13,8 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const router = express.Router();
 
-// Apply auth rate limiter
-router.use(authRateLimiter(45, 15 * 60 * 1000));
+// Apply auth rate limiter (supports 50-100 concurrent users including shared NAT IPs)
+router.use(authRateLimiter(150, 15 * 60 * 1000));
 
 /**
  * Generate standard application JWT

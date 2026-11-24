@@ -3,61 +3,92 @@ import pool from '../db.js';
 
 const router = express.Router();
 
+let settingsCache = { data: null, expiresAt: 0 };
+const SETTINGS_TTL_MS = 15000;
+
 router.get('/dashboard', async (req, res) => {
   try {
-    // Basic stats
-    const [[{ totalRevenue }]] = await pool.query(`SELECT COALESCE(SUM(total), 0) as totalRevenue FROM orders WHERE paymentStatus = 'paid'`);
-    const [[{ totalOrders }]] = await pool.query(`SELECT COUNT(*) as totalOrders FROM orders`);
-    const [[{ pendingOrders }]] = await pool.query(`SELECT COUNT(*) as pendingOrders FROM orders WHERE orderStatus NOT IN ('delivered', 'cancelled')`);
-    const [[{ lowStockProducts }]] = await pool.query(`SELECT COUNT(*) as lowStockProducts FROM products WHERE inStock = false`);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-    // Recent orders
-    const [recentOrders] = await pool.query(`SELECT * FROM orders ORDER BY created_at DESC LIMIT 5`);
+    const now = new Date();
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
-    // Chart Data
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const [
+      [[statsRow]],
+      [[{ lowStockProducts }]],
+      [recentOrders],
+      [monthlyRows],
+      [dailyRows],
+    ] = await Promise.all([
+      pool.query(`
+        SELECT
+          COALESCE(SUM(CASE WHEN paymentStatus = 'paid' THEN total ELSE 0 END), 0) AS totalRevenue,
+          COUNT(*) AS totalOrders,
+          SUM(CASE WHEN orderStatus NOT IN ('delivered', 'cancelled') THEN 1 ELSE 0 END) AS pendingOrders
+        FROM orders
+      `),
+      pool.query(`SELECT COUNT(*) AS lowStockProducts FROM products WHERE inStock = false`),
+      pool.query(`SELECT * FROM orders ORDER BY created_at DESC LIMIT 5`),
+      pool.query(
+        `SELECT YEAR(created_at) AS yr, MONTH(created_at) AS mo, COALESCE(SUM(total), 0) AS rev
+         FROM orders
+         WHERE paymentStatus = 'paid' AND created_at >= ?
+         GROUP BY YEAR(created_at), MONTH(created_at)`,
+        [sixMonthsAgo]
+      ),
+      pool.query(
+        `SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS dt, COUNT(*) AS count
+         FROM orders
+         WHERE created_at >= ?
+         GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d')`,
+        [sevenDaysAgo]
+      ),
+    ]);
+
+    const monthlyMap = new Map(monthlyRows.map((r) => [`${r.yr}-${r.mo}`, Number(r.rev)]));
     const revenueChartData = [];
     for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const m = d.getMonth();
-      const y = d.getFullYear();
-      const [rows] = await pool.query(`
-        SELECT COALESCE(SUM(total), 0) as rev 
-        FROM orders 
-        WHERE paymentStatus = 'paid' AND MONTH(created_at) = ? AND YEAR(created_at) = ?
-      `, [m + 1, y]);
-      revenueChartData.push({ month: monthNames[m], revenue: Number(rows[0].rev) });
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+      revenueChartData.push({
+        month: monthNames[d.getMonth()],
+        revenue: monthlyMap.get(key) || 0,
+      });
     }
 
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dailyMap = new Map(dailyRows.map((r) => [r.dt, Number(r.count)]));
     const ordersChartData = [];
     for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const [rows] = await pool.query(`
-        SELECT COUNT(*) as count 
-        FROM orders 
-        WHERE DATE(created_at) = DATE(?)
-      `, [d.toISOString().split('T')[0]]);
-      ordersChartData.push({ day: dayNames[d.getDay()], orders: Number(rows[0].count) });
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const key = `${yyyy}-${mm}-${dd}`;
+      ordersChartData.push({
+        day: dayNames[d.getDay()],
+        orders: dailyMap.get(key) || 0,
+      });
     }
 
     res.json({
       success: true,
       data: {
         stats: {
-          totalRevenue: Number(totalRevenue),
-          totalOrders: Number(totalOrders),
-          pendingOrders: Number(pendingOrders),
-          lowStockProducts: Number(lowStockProducts)
+          totalRevenue: Number(statsRow.totalRevenue || 0),
+          totalOrders: Number(statsRow.totalOrders || 0),
+          pendingOrders: Number(statsRow.pendingOrders || 0),
+          lowStockProducts: Number(lowStockProducts || 0),
         },
         recentOrders,
         revenueChartData,
-        ordersChartData
-      }
+        ordersChartData,
+      },
     });
-
   } catch (error) {
     console.error('Error fetching admin dashboard stats:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -99,8 +130,13 @@ router.delete('/messages/:id', async (req, res) => {
 
 router.get('/settings', async (req, res) => {
   try {
+    const now = Date.now();
+    if (settingsCache.data && now < settingsCache.expiresAt) {
+      return res.json({ success: true, data: settingsCache.data });
+    }
     const [rows] = await pool.query('SELECT email, phone, address FROM settings LIMIT 1');
     const settings = rows[0] || { email: '', phone: '', address: '' };
+    settingsCache = { data: settings, expiresAt: now + SETTINGS_TTL_MS };
     res.json({ success: true, data: settings });
   } catch (error) {
     console.error('Error fetching admin settings:', error);
@@ -111,8 +147,7 @@ router.get('/settings', async (req, res) => {
 router.put('/settings', async (req, res) => {
   try {
     const { email, phone, address } = req.body;
-    
-    // Update or insert the first row
+
     const [result] = await pool.query(
       'UPDATE settings SET email = ?, phone = ?, address = ? WHERE id = 1',
       [email, phone, address]
@@ -124,7 +159,8 @@ router.put('/settings', async (req, res) => {
         [email, phone, address]
       );
     }
-    
+
+    settingsCache = { data: { email, phone, address }, expiresAt: Date.now() + SETTINGS_TTL_MS };
     res.json({ success: true, message: 'Settings updated' });
   } catch (error) {
     console.error('Error updating admin settings:', error);

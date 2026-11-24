@@ -302,7 +302,13 @@ async function initDB() {
 
     // users migrations
     await addColumnIfNotExists(connection, dbName, 'users', 'location', 'VARCHAR(255) AFTER password');
-    await addColumnIfNotExists(connection, dbName, 'users', 'role', "VARCHAR(50) DEFAULT 'user' AFTER location");
+    await addColumnIfNotExists(connection, dbName, 'users', 'avatar', 'VARCHAR(500) NULL AFTER location');
+    await addColumnIfNotExists(connection, dbName, 'users', 'role', "VARCHAR(50) DEFAULT 'user' AFTER avatar");
+    await connection.query(`
+      ALTER TABLE users
+      MODIFY COLUMN password VARCHAR(255) NULL,
+      MODIFY COLUMN phonenumber VARCHAR(20) NULL
+    `);
 
     // messages migrations
     await addColumnIfNotExists(connection, dbName, 'messages', 'status', "VARCHAR(20) DEFAULT 'unread' AFTER message");

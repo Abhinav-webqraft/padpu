@@ -47,12 +47,12 @@ export interface GalleryImage {
 export interface Testimonial {
   id: string;
   name: string;
-  location: string;
-  avatar: string;
+  location?: string;
+  avatar?: string;
   rating: number;
   review: string;
-  date: string;
-  verified: boolean;
+  date?: string;
+  verified?: boolean;
 }
 
 export interface CartItem {
@@ -94,28 +94,4 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   couponCode?: string;
-}
-
-export interface Coupon {
-  id: string;
-  code: string;
-  type: 'percentage' | 'flat';
-  value: number;
-  minOrderValue: number;
-  maxUses: number;
-  usedCount: number;
-  validFrom: string;
-  validUntil: string;
-  isActive: boolean;
-}
-
-export interface AdminStats {
-  totalOrders: number;
-  totalRevenue: number;
-  pendingOrders: number;
-  lowStockProducts: number;
-  todayOrders: number;
-  todayRevenue: number;
-  monthOrders: number;
-  monthRevenue: number;
 }

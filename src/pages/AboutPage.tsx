@@ -17,26 +17,53 @@ const values = [
   { icon: Heart, title: 'Farm Direct', desc: 'Honest honey straight from our apiaries to your table.' },
 ];
 
+const founder = {
+  name: 'Lingappa Gowda Padpu',
+  subtitle: 'Founder, 40+ years in Apiculture',
+  image: '/images/founder.jpeg',
+  achievements: [
+    'District-level Best Agriculturist (2014–15)',
+    'Kempegowda Jayanti Taluk-level Award (2024)',
+    'Best Agriculturist of the Year (2023–24)',
+  ],
+};
+
 const team = [
   {
-    name: 'Ramesh Padpu',
-    role: 'Founder & Master Beekeeper',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80',
+    name: 'Vivek Padpu',
+    initials: 'VP',
+    role: 'Trainer & Developer',
+    experience: '15+ years experience',
+    highlight: 'Modern Youth Apiculturist 2022',
   },
   {
-    name: 'Sunita Devi',
-    role: 'Quality & Extraction',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
+    name: 'Keerthan Pare',
+    initials: 'KP',
+    role: 'Trainer',
+    experience: '10+ years experience',
   },
   {
-    name: 'Aryan Padpu',
-    role: 'Operations & Logistics',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80',
+    name: 'Astik Chithadka',
+    initials: 'AC',
+    role: 'Trainer',
+    experience: '10+ years experience',
   },
   {
-    name: 'Meena Negi',
-    role: 'Customer Care',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80',
+    name: 'Vineeth Tanteppady',
+    initials: 'VT',
+    role: 'Trainer',
+    experience: '10+ years experience',
+  },
+  {
+    name: 'Akshay Kumar Madabhakilu',
+    initials: 'AM',
+    role: 'Trainer',
+    experience: '3+ years experience',
+  },
+  {
+    name: 'Kaushik Kolpe',
+    initials: 'KK',
+    role: 'Business Promoter',
   },
 ];
 
@@ -88,10 +115,10 @@ export default function AboutPage() {
             Since 1983
           </span>
           <h1 className="font-display font-bold text-3xl sm:text-5xl text-white mb-4 leading-tight">
-            From Nature <span className="amber-gradient-text">to Your Table</span>
+            About <span className="amber-gradient-text">Padpu Farms</span>
           </h1>
           <p className="text-stone-400 font-light text-sm sm:text-base leading-relaxed">
-            Born in Dakshina Kannada, Padpu Farms crafts 100% pure, raw honey through ethical beekeeping and deep respect for the Western Ghats.
+            Independent beekeepers from Sullia, Dakshina Kannada, cultivating pure Multi-Floral Apis cerena honey across the Western Ghats and Pushpagiri Reserve Forest.
           </p>
         </motion.div>
 
@@ -225,24 +252,120 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Team */}
+        {/* Founder */}
         <div>
-          <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400 text-center mb-6">Our Team</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400 text-center mb-6">Our Founder</h2>
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="max-w-3xl mx-auto rounded-3xl bg-white/[0.04] border border-amber-500/20 p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 sm:gap-8"
+          >
+            <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-2 border-amber-500/40 bg-stone-900/60 shrink-0 shadow-lg">
+              <img
+                src={founder.image}
+                alt={founder.name}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+
+            <div className="text-center sm:text-left">
+              <h3 className="font-display font-bold text-2xl sm:text-3xl text-white">
+                {founder.name}
+              </h3>
+              <p className="text-amber-400 text-xs sm:text-sm font-medium mt-1 mb-4">
+                {founder.subtitle}
+              </p>
+              <ul className="space-y-2 text-left inline-block">
+                {founder.achievements.map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-xs sm:text-sm text-stone-300 font-light">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Meet Our Team */}
+        <div>
+          <div className="text-center mb-8">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-semibold tracking-widest text-amber-400 border border-amber-500/20 bg-amber-500/10 uppercase mb-3">
+              ✦ The Apiculturists ✦
+            </span>
+            <h2 className="font-display font-bold text-2xl sm:text-3xl text-white">Meet Our Team</h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {team.map((member, i) => (
               <motion.div
                 key={member.name}
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 18 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.35, delay: i * 0.05 }}
                 viewport={{ once: true }}
-                className="rounded-2xl bg-white/[0.04] border border-white/10 p-5 text-center"
+                className="group relative overflow-hidden rounded-3xl bg-gradient-to-b from-white/[0.06] to-white/[0.02] border border-white/10 hover:border-amber-500/35 p-6 sm:p-7 text-center flex flex-col items-center justify-center transition-colors duration-300"
               >
-                <div className="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-3 border border-amber-500/30">
-                  <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" loading="lazy" />
+                {/* Top golden shimmer accent */}
+                <div className="absolute top-0 inset-x-10 h-px bg-gradient-to-r from-transparent via-amber-400/60 to-transparent opacity-40 group-hover:opacity-100 transition-opacity duration-300" />
+
+                {/* Subtle honeycomb corner watermark */}
+                <svg
+                  viewBox="0 0 80 80"
+                  className="absolute -right-4 -bottom-4 w-24 h-24 text-amber-400 opacity-[0.04] group-hover:opacity-[0.09] transition-opacity duration-300 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <polygon points="40,6 68,22 68,54 40,70 12,54 12,22" />
+                  <polygon points="40,18 58,28 58,48 40,58 22,48 22,28" />
+                </svg>
+
+                {/* Hexagonal Monogram Crest */}
+                <div className="relative w-14 h-14 flex items-center justify-center mb-4">
+                  <svg
+                    viewBox="0 0 60 60"
+                    className="absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-105"
+                  >
+                    <polygon
+                      points="30,3 54,16.5 54,43.5 30,57 6,43.5 6,16.5"
+                      className="fill-amber-500/10 stroke-amber-500/35 group-hover:fill-amber-500/20 group-hover:stroke-amber-400/70 transition-colors duration-300"
+                      strokeWidth="1.5"
+                    />
+                  </svg>
+                  <span className="relative z-10 font-display font-bold text-sm tracking-wider text-amber-300">
+                    {member.initials}
+                  </span>
                 </div>
-                <h3 className="font-display font-bold text-white text-sm">{member.name}</h3>
-                <p className="text-amber-400 text-[10px] font-semibold uppercase tracking-wider mt-0.5">{member.role}</p>
+
+                {/* Centered Member Info */}
+                <h3 className="font-display font-bold text-lg text-white group-hover:text-amber-100 transition-colors leading-snug">
+                  {member.name}
+                </h3>
+
+                <span className="mt-2 inline-block px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold uppercase tracking-widest">
+                  {member.role}
+                </span>
+
+                {(member.experience || member.highlight) && (
+                  <>
+                    <div className="w-8 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent my-3.5" />
+                    <div className="space-y-1">
+                      {member.experience && (
+                        <p className="text-stone-300 font-light text-xs">{member.experience}</p>
+                      )}
+                      {member.highlight && (
+                        <p className="text-amber-300/90 text-[11px] font-medium">
+                          ✦ {member.highlight}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
               </motion.div>
             ))}
           </div>

@@ -3,6 +3,13 @@ import pool from '../db.js';
 
 const router = express.Router();
 
+let productsCache = { data: null, expiresAt: 0 };
+const PRODUCTS_TTL_MS = 12000;
+
+export function invalidateProductsCache() {
+  productsCache = { data: null, expiresAt: 0 };
+}
+
 const formatProduct = (row) => ({
   ...row,
   id: String(row.id),
@@ -40,8 +47,14 @@ router.get('/random', async (req, res) => {
 // Get all products
 router.get('/', async (req, res) => {
   try {
+    const now = Date.now();
+    if (productsCache.data && now < productsCache.expiresAt) {
+      return res.json(productsCache.data);
+    }
     const [rows] = await pool.query(`${PRODUCT_SELECT} GROUP BY p.id ORDER BY p.created_at DESC`);
-    res.json(rows.map(formatProduct));
+    const formatted = rows.map(formatProduct);
+    productsCache = { data: formatted, expiresAt: now + PRODUCTS_TTL_MS };
+    res.json(formatted);
   } catch (error) {
     console.error('Error fetching products:', error.message);
     res.status(500).json({ message: 'Server error' });
@@ -73,6 +86,7 @@ router.post('/', async (req, res) => {
       ]
     );
 
+    invalidateProductsCache();
     res.status(201).json({ message: 'Product added' });
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
@@ -111,6 +125,7 @@ router.put('/:id', async (req, res) => {
       ]
     );
 
+    invalidateProductsCache();
     res.json({ message: 'Product updated' });
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
@@ -126,6 +141,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query('DELETE FROM products WHERE id = ?', [id]);
+    invalidateProductsCache();
     res.json({ message: 'Product deleted' });
   } catch (error) {
     console.error('Error deleting product:', error.code, error.message);

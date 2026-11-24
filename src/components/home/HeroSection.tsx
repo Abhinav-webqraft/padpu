@@ -130,11 +130,11 @@ export default function HeroSection() {
     rafId.current = requestAnimationFrame(tick);
   }, [drawFrame]);
 
-  // ── Loader ────────────────────────────────────────────────────────
-  const loadSingleFrame = useCallback((index) => {
-    if (isReturningUser) return;
-    if (index < 0 || index >= TOTAL_FRAMES) return;
-    if (imagesRef.current[index] || loadingSet.current.has(index)) return;
+  // ── Loader (concurrency-limited so 50-100 concurrent visitors don't stampede 164 requests at once) ──
+  const loadSingleFrame = useCallback((index, onDone) => {
+    if (isReturningUser) { onDone?.(); return; }
+    if (index < 0 || index >= TOTAL_FRAMES) { onDone?.(); return; }
+    if (imagesRef.current[index] || loadingSet.current.has(index)) { onDone?.(); return; }
     loadingSet.current.add(index);
     const img = new Image();
     img.decoding = 'async';
@@ -145,23 +145,44 @@ export default function HeroSection() {
       setLoadProgress(Math.round((loadedCount.current / TOTAL_FRAMES) * 100));
       if (index === 0) { setIsLoaded(true); drawFrame(0); }
       loadingSet.current.delete(index);
+      onDone?.();
     };
-    img.onerror = () => loadingSet.current.delete(index);
-  }, [drawFrame]);
+    img.onerror = () => {
+      loadingSet.current.delete(index);
+      onDone?.();
+    };
+  }, [drawFrame, isReturningUser]);
 
   useEffect(() => {
     if (isReturningUser) return;
+    let cancelled = false;
     const links = [];
-    for (let i = 0; i < Math.min(20, TOTAL_FRAMES); i++) {
+    for (let i = 0; i < Math.min(6, TOTAL_FRAMES); i++) {
       const link = document.createElement('link');
       link.rel = 'preload'; link.as = 'image';
       link.href = ALL_FRAMES[i];
       document.head.appendChild(link);
       links.push(link);
     }
-    for (let i = 0; i < TOTAL_FRAMES; i++) loadSingleFrame(i);
-    return () => links.forEach((l) => { if (l.parentNode) l.parentNode.removeChild(l); });
-  }, [loadSingleFrame]);
+
+    // Prioritize frame 0 immediately so hero unlocks fast, then stream remaining frames with 8 workers
+    let nextIndex = 1;
+    const MAX_CONCURRENT = 8;
+    const pump = () => {
+      if (cancelled || nextIndex >= TOTAL_FRAMES) return;
+      const idx = nextIndex++;
+      loadSingleFrame(idx, pump);
+    };
+
+    loadSingleFrame(0, () => {
+      for (let w = 0; w < MAX_CONCURRENT; w++) pump();
+    });
+
+    return () => {
+      cancelled = true;
+      links.forEach((l) => { if (l.parentNode) l.parentNode.removeChild(l); });
+    };
+  }, [loadSingleFrame, isReturningUser]);
 
   useEffect(() => {
     if (!isLoaded) return;

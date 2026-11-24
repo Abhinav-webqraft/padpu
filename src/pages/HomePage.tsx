@@ -4,6 +4,7 @@ import AboutSection from '../components/home/AboutSection';
 import WhyChooseUs from '../components/home/WhyChooseUs';
 import GalleryPreview from '../components/home/GalleryPreview';
 import Testimonials from '../components/home/Testimonials';
+import WhatsAppButton from '../components/layout/WhatsAppButton';
 
 export default function HomePage() {
   return (
@@ -27,6 +28,7 @@ export default function HomePage() {
           <Testimonials />
         </div>
       </div>
+      <WhatsAppButton />
     </div>
   );
 }

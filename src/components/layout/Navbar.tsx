@@ -36,36 +36,51 @@ export default function Navbar() {
 
   if (location.pathname.startsWith("/admin")) return null;
 
+  const isHome = location.pathname === "/";
+
   return (
     <header
-      className={`fixed top-0 w-full z-40 transition-all duration-300 pointer-events-none md:pointer-events-auto ${
-        scrolled
-          ? "md:py-3 py-2.5 bg-[#0d0a05]/90 backdrop-blur-md border-b border-white/10 shadow-lg pointer-events-auto"
-          : "bg-transparent md:py-4 py-3"
+      className={`fixed top-0 left-0 right-0 w-full z-40 transition-all duration-300 ${
+        isHome
+          ? scrolled
+            ? "pointer-events-none md:pointer-events-auto bg-transparent md:bg-[#0d0a05]/90 md:backdrop-blur-md md:border-b md:border-white/10 md:shadow-lg py-3 md:py-3.5"
+            : "pointer-events-none md:pointer-events-auto bg-transparent py-3 md:py-4"
+          : "pointer-events-auto bg-[#0d0a05]/95 backdrop-blur-md border-b border-white/10 shadow-lg py-3 md:py-4"
       }`}
     >
-      <div className="relative z-[2] max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between md:grid md:grid-cols-3">
-        {/* Mobile: Logo centered */}
-        <Link to="/" className="md:hidden absolute left-1/2 -translate-x-1/2 flex items-center group pointer-events-auto">
-          <img
-            src="/logo.png"
-            alt="Padpu Farms"
-            className="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-          />
-        </Link>
-        <div className="md:hidden w-6" />
+      <div
+        className={`relative z-[2] mx-auto flex items-center justify-between md:grid md:grid-cols-3 ${
+          isHome
+            ? "max-w-7xl px-4 sm:px-6"
+            : "max-w-[1440px] w-full px-4 sm:px-8 lg:px-12 min-h-[48px] md:min-h-0"
+        }`}
+      >
+        {/* Mobile: Bigger centered logo on all pages EXCEPT Home */}
+        {!isHome && (
+          <Link
+            to="/"
+            className="md:hidden absolute left-1/2 -translate-x-1/2 flex items-center group pointer-events-auto"
+          >
+            <img
+              src="/logo.png"
+              alt="Padpu Farms"
+              className="h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            />
+          </Link>
+        )}
+        <div className="md:hidden w-8" />
 
         {/* Desktop: left placeholder */}
         <div className="hidden md:block" />
 
         {/* Desktop Center Nav */}
         <nav className="hidden md:flex items-center justify-center w-full">
-          <div className="flex items-center justify-end gap-6 flex-1">
+          <div className="flex items-center justify-end gap-7 flex-1">
             {leftLinks.map((link) => (
               <Link
                 key={link.href}
                 to={link.href}
-                className={`text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-1.5 ${
+                className={`text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                   location.pathname === link.href
                     ? "text-amber-400"
                     : "text-stone-300 hover:text-white"
@@ -81,20 +96,24 @@ export default function Navbar() {
             ))}
           </div>
 
-          <Link to="/" className="mx-6 shrink-0 group">
-            <img
-              src="/logo.png"
-              alt="Padpu Farms"
-              className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-            />
-          </Link>
+          {!isHome ? (
+            <Link to="/" className="mx-8 shrink-0 group">
+              <img
+                src="/logo.png"
+                alt="Padpu Farms"
+                className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              />
+            </Link>
+          ) : (
+            <div className="mx-5 w-px h-4 bg-white/15 shrink-0" />
+          )}
 
-          <div className="flex items-center justify-start gap-6 flex-1">
+          <div className="flex items-center justify-start gap-7 flex-1">
             {rightLinks.map((link) => (
               <Link
                 key={link.href}
                 to={link.href}
-                className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
+                className={`text-xs font-semibold uppercase tracking-wider transition-colors whitespace-nowrap ${
                   location.pathname === link.href
                     ? "text-amber-400"
                     : "text-stone-300 hover:text-white"
@@ -107,7 +126,7 @@ export default function Navbar() {
         </nav>
 
         {/* Right Actions */}
-        <div className="flex items-center justify-end gap-1.5 pointer-events-auto ml-auto">
+        <div className="flex items-center justify-end gap-1 sm:gap-1.5 pointer-events-auto ml-auto">
           {role && (
             <>
               {/* Wishlist */}
@@ -143,28 +162,6 @@ export default function Navbar() {
             </>
           )}
 
-          {/* Profile / Login */}
-          {role ? (
-            <Link
-              to="/profile"
-              className="p-2 hover:bg-white/10 rounded-xl transition-colors hidden md:block"
-              title="Profile"
-            >
-              <User
-                className={`w-4 h-4 ${
-                  location.pathname === "/profile" ? "text-amber-400" : "text-stone-300"
-                }`}
-              />
-            </Link>
-          ) : (
-            <Link
-              to="/login"
-              className="px-4 py-2 amber-gradient text-stone-950 text-xs font-bold rounded-xl transition-all hover:opacity-90 hidden md:block"
-            >
-              Sign In
-            </Link>
-          )}
-
           {role && (
             <button
               onClick={openCart}
@@ -178,6 +175,41 @@ export default function Navbar() {
                 </span>
               )}
             </button>
+          )}
+
+          {/* Profile / Login */}
+          {role ? (
+            <Link
+              to="/profile"
+              className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+              title="Profile"
+            >
+              <User
+                className={`w-4 h-4 ${
+                  location.pathname === "/profile" ? "text-amber-400" : "text-stone-300"
+                }`}
+              />
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="p-2 hover:bg-white/10 rounded-xl transition-colors md:hidden"
+                title="Sign In"
+              >
+                <User
+                  className={`w-4 h-4 ${
+                    location.pathname === "/login" ? "text-amber-400" : "text-stone-300"
+                  }`}
+                />
+              </Link>
+              <Link
+                to="/login"
+                className="px-4 py-2 amber-gradient text-stone-950 text-xs font-bold rounded-xl transition-all hover:opacity-90 hidden md:block"
+              >
+                Sign In
+              </Link>
+            </>
           )}
         </div>
       </div>

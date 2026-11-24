@@ -1,6 +1,7 @@
 import express from 'express';
 import pool from '../db.js';
 import { verifyToken } from '../middleware/auth.js';
+import { invalidateProductsCache } from './products.js';
 
 const router = express.Router();
 
@@ -59,6 +60,8 @@ router.post('/', verifyToken, async (req, res) => {
        FROM reviews WHERE product_id = ?`,
       [product_id]
     );
+
+    invalidateProductsCache();
 
     res.status(201).json({
       success: true,

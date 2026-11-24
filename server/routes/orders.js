@@ -211,54 +211,73 @@ router.post('/cod', async (req, res) => {
     connection.release();
   }
 });
+// Batch-attach order_items to a list of orders in a single SQL query (avoids N+1 under load)
+async function hydrateOrdersWithItems(orders) {
+  if (!orders || orders.length === 0) return [];
+
+  const orderIds = orders.map((o) => o.id);
+  const [allItems] = await pool.query(
+    `SELECT oi.*, p.name as product_name, p.images as product_images
+     FROM order_items oi
+     LEFT JOIN products p ON oi.product_id = p.id
+     WHERE oi.order_id IN (?)`,
+    [orderIds]
+  );
+
+  const itemsByOrderId = new Map();
+  for (const item of allItems) {
+    let imgs = [];
+    try {
+      imgs = typeof item.product_images === 'string'
+        ? JSON.parse(item.product_images)
+        : (item.product_images || []);
+    } catch {
+      imgs = [];
+    }
+    const formatted = {
+      product: {
+        id: item.product_id ? item.product_id.toString() : '',
+        name: item.product_name || 'Pure Honey',
+        images: Array.isArray(imgs) ? imgs : [],
+      },
+      selectedWeight: {
+        label: item.weight_label || '500g',
+        price: parseFloat(item.price) || 0,
+      },
+      quantity: item.quantity,
+    };
+    const list = itemsByOrderId.get(item.order_id) || [];
+    list.push(formatted);
+    itemsByOrderId.set(item.order_id, list);
+  }
+
+  for (const order of orders) {
+    const rawId = order.id;
+    if (typeof order.shippingAddress === 'string') {
+      try {
+        order.shippingAddress = JSON.parse(order.shippingAddress);
+      } catch {
+        order.shippingAddress = {};
+      }
+    }
+    order.id = rawId.toString();
+    order.createdAt = order.created_at;
+    order.updatedAt = order.updated_at;
+    order.total = parseFloat(order.total) || 0;
+    order.subtotal = parseFloat(order.subtotal) || 0;
+    order.tax = parseFloat(order.tax) || 0;
+    order.shippingCharge = parseFloat(order.shippingCharge) || 0;
+    order.discount = parseFloat(order.discount) || 0;
+    order.items = itemsByOrderId.get(rawId) || [];
+  }
+
+  return orders;
+}
+
 router.get('/', async (req, res) => {
   try {
     const [orders] = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
-    
-    // Fetch items for each order
-    for (const order of orders) {
-      // Parse shipping address if it's a string
-      if (typeof order.shippingAddress === 'string') {
-        try {
-          order.shippingAddress = JSON.parse(order.shippingAddress);
-        } catch (e) {
-          order.shippingAddress = {};
-        }
-      }
-
-      // Rename created_at to createdAt, etc. for frontend
-      order.id = order.id.toString();
-      order.createdAt = order.created_at;
-      order.updatedAt = order.updated_at;
-      order.total = parseFloat(order.total) || 0;
-      order.subtotal = parseFloat(order.subtotal) || 0;
-      order.tax = parseFloat(order.tax) || 0;
-      order.shippingCharge = parseFloat(order.shippingCharge) || 0;
-      order.discount = parseFloat(order.discount) || 0;
-
-      // Fetch items for this order
-      const [items] = await pool.query(
-        `SELECT oi.*, p.name as product_name, p.images as product_images 
-         FROM order_items oi 
-         LEFT JOIN products p ON oi.product_id = p.id 
-         WHERE oi.order_id = ?`,
-        [order.id]
-      );
-      
-      order.items = items.map(item => ({
-        product: {
-          id: item.product_id.toString(),
-          name: item.product_name,
-          images: item.product_images ? JSON.parse(item.product_images) : []
-        },
-        selectedWeight: {
-          label: item.weight_label,
-          price: parseFloat(item.price) || 0
-        },
-        quantity: item.quantity
-      }));
-    }
-    
+    await hydrateOrdersWithItems(orders);
     res.json(orders);
   } catch (error) {
     console.error('Error fetching orders:', error);
@@ -272,7 +291,7 @@ router.get('/my-orders', async (req, res) => {
     if (!userId && !email) {
       return res.status(400).json({ message: 'UserId or email is required' });
     }
-    
+
     let query = 'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC';
     let params = [userId];
     if (email && userId) {
@@ -282,52 +301,9 @@ router.get('/my-orders', async (req, res) => {
       query = 'SELECT * FROM orders WHERE customerEmail = ? ORDER BY created_at DESC';
       params = [email];
     }
-    
-    const [orders] = await pool.query(query, params);
-    
-    for (const order of orders) {
-      if (typeof order.shippingAddress === 'string') {
-        try { order.shippingAddress = JSON.parse(order.shippingAddress); } catch (e) { order.shippingAddress = {}; }
-      }
-      order.id = order.id.toString();
-      order.createdAt = order.created_at;
-      order.updatedAt = order.updated_at;
-      order.total = parseFloat(order.total) || 0;
-      order.subtotal = parseFloat(order.subtotal) || 0;
-      order.tax = parseFloat(order.tax) || 0;
-      order.shippingCharge = parseFloat(order.shippingCharge) || 0;
-      order.discount = parseFloat(order.discount) || 0;
 
-      const [items] = await pool.query(
-        `SELECT oi.*, p.name as product_name, p.images as product_images 
-         FROM order_items oi 
-         LEFT JOIN products p ON oi.product_id = p.id 
-         WHERE oi.order_id = ?`,
-        [order.id]
-      );
-      
-      order.items = items.map(item => {
-        let imgs = [];
-        try {
-          imgs = typeof item.product_images === 'string' ? JSON.parse(item.product_images) : (item.product_images || []);
-        } catch (e) {
-          imgs = [];
-        }
-        return {
-          product: {
-            id: item.product_id ? item.product_id.toString() : '',
-            name: item.product_name || 'Pure Honey',
-            images: Array.isArray(imgs) ? imgs : []
-          },
-          selectedWeight: {
-            label: item.weight_label || '500g',
-            price: parseFloat(item.price) || 0
-          },
-          quantity: item.quantity
-        };
-      });
-    }
-    
+    const [orders] = await pool.query(query, params);
+    await hydrateOrdersWithItems(orders);
     res.json(orders);
   } catch (error) {
     console.error('Error fetching user orders:', error);

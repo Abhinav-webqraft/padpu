@@ -1,2 +1,8 @@
 node_modules/
+server/node_modules/
+dist/
 .next/
+.env
+.env.*
+server/.env
+server/.env.*
