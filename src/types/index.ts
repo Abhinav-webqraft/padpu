@@ -1,6 +1,7 @@
 export interface WeightOption {
   label: string;
   price: number;
+  originalPrice?: number;
   grams: number;
 }
 

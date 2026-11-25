@@ -8,6 +8,15 @@ dotenv.config();
 
 const initialCategories = ['Pure Honey', 'Forest Honey', 'Flavoured Honey', 'Gift Packs'];
 
+const initialWeights = [
+  { label: '250g', grams: 250 },
+  { label: '500g', grams: 500 },
+  { label: '1kg', grams: 1000 },
+  { label: '3×250g', grams: 750 },
+  { label: '3×500g', grams: 1500 },
+  { label: 'Complete Set', grams: 1250 },
+];
+
 const initialProducts = [
   {
     id: 1,
@@ -310,8 +319,10 @@ async function initDB() {
       MODIFY COLUMN phonenumber VARCHAR(20) NULL
     `);
 
-    // messages migrations
+    // Ensure existing role values are normalized to lowercase ('admin' / 'user')
+    await connection.query(`UPDATE users SET role = LOWER(role) WHERE role IS NOT NULL`);
     await addColumnIfNotExists(connection, dbName, 'messages', 'status', "VARCHAR(20) DEFAULT 'unread' AFTER message");
+    await addColumnIfNotExists(connection, dbName, 'weights', 'default_price', 'DECIMAL(10,2) DEFAULT 0 AFTER grams');
 
     console.log('All table columns migrated and up-to-date.');
 
@@ -326,6 +337,20 @@ async function initDB() {
       );
     }
     console.log(`Categories verified (${initialCategories.length} categories).`);
+
+    // Weights
+    const [existingWeights] = await connection.query('SELECT COUNT(*) as count FROM weights');
+    if (existingWeights[0].count === 0) {
+      for (const w of initialWeights) {
+        await connection.query(
+          'INSERT IGNORE INTO weights (label, grams) VALUES (?, ?)',
+          [w.label, w.grams]
+        );
+      }
+      console.log(`Seeded ${initialWeights.length} initial weight options.`);
+    } else {
+      console.log(`Weights already present (${existingWeights[0].count} weights).`);
+    }
 
     // Products
     const [existingProducts] = await connection.query('SELECT COUNT(*) as count FROM products');
@@ -370,7 +395,11 @@ async function initDB() {
       console.log('Seeding initial store settings...');
       await connection.query(
         'INSERT INTO settings (id, email, phone, address) VALUES (1, ?, ?, ?)',
-        ['hello@padpufarms.com', '+91 98765 43210', 'Padpu Farms, Dakshina Kannada, Karnataka, India']
+        [
+          'padpufarms@gmail.com',
+          '7411860340',
+          'Padpu Farms Amaramudnuru Village Pailar Post Sullia Taluk Dakshina Kannada Dist Karnataka 574248'
+        ]
       );
       console.log('Store settings seeded.');
     } else {

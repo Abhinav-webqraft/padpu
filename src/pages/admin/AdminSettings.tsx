@@ -28,7 +28,8 @@ export default function AdminSettings() {
       const data = await response.json();
       if (data.success && data.data) {
         setEmail(data.data.email || '');
-        setPhone((data.data.phone || '').replace(/\D/g, '').substring(0, 10));
+        const cleanDigits = (data.data.phone || '').replace(/\D/g, '');
+        setPhone(cleanDigits.length >= 10 ? cleanDigits.slice(-10) : cleanDigits);
         setAddress(data.data.address || '');
       }
     } catch (error) {
@@ -123,7 +124,7 @@ export default function AdminSettings() {
                   className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/30 border text-white text-xs sm:text-sm outline-none transition-colors ${
                     fieldErrors.email ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-amber-500/50'
                   }`}
-                  placeholder="hello@padpufarms.in"
+                  placeholder="padpufarms@gmail.com"
                 />
               </div>
               {fieldErrors.email && (
@@ -151,7 +152,7 @@ export default function AdminSettings() {
                   className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/30 border text-white text-xs sm:text-sm outline-none transition-colors font-sans ${
                     fieldErrors.phone ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-amber-500/50'
                   }`}
-                  placeholder="9876543210"
+                  placeholder="7411860340"
                 />
               </div>
               {fieldErrors.phone && (

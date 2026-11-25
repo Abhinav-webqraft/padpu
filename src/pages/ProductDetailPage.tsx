@@ -13,7 +13,7 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { addItem, openCart } = useCart();
   const { isWishlisted, toggleWishlist } = useWishlist();
-  const { user, token, role } = useAuth();
+  const { user, token } = useAuth();
 
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
@@ -139,10 +139,6 @@ export default function ProductDetailPage() {
   const saved = isWishlisted(product.id);
 
   const handleAddToCart = () => {
-    if (!role && !user) {
-      navigate('/login');
-      return;
-    }
     addItem(product, selectedWeight, quantity);
     openCart();
   };
@@ -255,11 +251,19 @@ export default function ProductDetailPage() {
               <span className="text-2xl sm:text-3xl font-bold text-amber-400 font-sans">
                 ₹{selectedWeight.price}
               </span>
-              {product.originalPrice && selectedWeight.label === product.weightOptions[0].label && (
-                <span className="text-sm text-stone-500 line-through font-sans">
-                  ₹{product.originalPrice}
-                </span>
-              )}
+              {(() => {
+                const mrp =
+                  selectedWeight.originalPrice && selectedWeight.originalPrice > 0
+                    ? selectedWeight.originalPrice
+                    : selectedWeight.label === product.weightOptions[0]?.label
+                    ? product.originalPrice
+                    : 0;
+                return mrp && mrp > selectedWeight.price ? (
+                  <span className="text-sm text-stone-500 line-through font-sans">
+                    ₹{mrp}
+                  </span>
+                ) : null;
+              })()}
               <span className="ml-auto text-xs">
                 {product.inStock ? (
                   <span className="text-emerald-400 font-medium inline-flex items-center gap-1">
@@ -327,23 +331,13 @@ export default function ProductDetailPage() {
 
             {/* Add to Cart */}
             {product.inStock ? (
-              role ? (
-                <button
-                  onClick={handleAddToCart}
-                  className="w-full py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold text-sm amber-gradient text-stone-950 hover:shadow-[0_0_25px_rgba(245,158,11,0.35)] transition-all"
-                >
-                  <ShoppingCart className="w-4 h-4" />
-                  Add to Cart • ₹{selectedWeight.price * quantity}
-                </button>
-              ) : (
-                <Link
-                  to="/login"
-                  className="w-full py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold text-sm amber-gradient text-stone-950 hover:shadow-[0_0_25px_rgba(245,158,11,0.35)] transition-all"
-                >
-                  <ShoppingCart className="w-4 h-4" />
-                  Sign In to Add to Cart
-                </Link>
-              )
+              <button
+                onClick={handleAddToCart}
+                className="w-full py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold text-sm amber-gradient text-stone-950 hover:shadow-[0_0_25px_rgba(245,158,11,0.35)] transition-all"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                Add to Cart • ₹{selectedWeight.price * quantity}
+              </button>
             ) : (
               <button
                 disabled

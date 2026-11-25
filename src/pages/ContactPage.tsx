@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Send, MessageCircle, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { DEFAULT_STORE_SETTINGS, formatPhoneDisplay, formatWhatsAppNumber } from '../utils/formatters';
 
 type FieldErrors = {
   name?: string;
@@ -19,9 +20,9 @@ export default function ContactPage() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [settings, setSettings] = useState({
-    phone: '+91 98765 43210',
-    email: 'hello@padpufarms.in',
-    address: 'Padpu Farms, Dakshina Kannada, Karnataka'
+    phone: DEFAULT_STORE_SETTINGS.phone,
+    email: DEFAULT_STORE_SETTINGS.email,
+    address: DEFAULT_STORE_SETTINGS.address
   });
 
   useEffect(() => {
@@ -30,9 +31,9 @@ export default function ContactPage() {
       .then(data => {
         if (data.success && data.data) {
           setSettings({
-            phone: data.data.phone || '+91 98765 43210',
-            email: data.data.email || 'hello@padpufarms.in',
-            address: data.data.address || 'Padpu Farms, Dakshina Kannada, Karnataka'
+            phone: data.data.phone || DEFAULT_STORE_SETTINGS.phone,
+            email: data.data.email || DEFAULT_STORE_SETTINGS.email,
+            address: data.data.address || DEFAULT_STORE_SETTINGS.address
           });
         }
       })
@@ -291,10 +292,10 @@ export default function ContactPage() {
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
               {[
-                { icon: Phone, label: 'Phone', value: settings.phone },
+                { icon: Phone, label: 'Phone', value: formatPhoneDisplay(settings.phone) },
                 { icon: Mail, label: 'Email', value: settings.email },
-                { icon: MapPin, label: 'Location', value: settings.address },
-                { icon: Clock, label: 'Hours', value: 'Mon – Sat, 9 AM – 6 PM' },
+                { icon: MapPin, label: 'Address', value: settings.address },
+                { icon: Clock, label: 'Working Hours', value: DEFAULT_STORE_SETTINGS.workingHours },
               ].map(({ icon: Icon, label, value }) => (
                 <div
                   key={label}
@@ -312,7 +313,7 @@ export default function ContactPage() {
             </div>
 
             <a
-              href={`https://wa.me/${settings.phone.replace(/\D/g, '')}?text=Hi%2C%20I%27m%20interested%20in%20your%20honey%20products!`}
+              href={`https://wa.me/${formatWhatsAppNumber(settings.phone)}?text=Hi%2C%20I%27m%20interested%20in%20your%20honey%20products!`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-white text-xs hover:opacity-90 transition-opacity"

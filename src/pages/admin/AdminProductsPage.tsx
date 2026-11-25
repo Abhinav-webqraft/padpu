@@ -1,11 +1,11 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Product } from '../../types';
 import { Plus, Edit2, Trash2, X, Check, Search, Upload, AlertCircle, Package } from 'lucide-react';
 
-const WEIGHT_LABELS = ['250g', '500g', '1kg', '3Ã—250g', '3Ã—500g', 'Complete Set'];
-
-type WeightOption = { label: string; price: number; grams: number };
+type WeightOption = { label: string; price: number; originalPrice?: number; grams: number };
+type DbWeight = { id: number; label: string; grams: number; defaultPrice?: number };
 type NewProduct = {
   name: string; shortDescription: string; description: string;
   category: string; price: number; originalPrice: number;
@@ -25,13 +25,14 @@ const BLANK: NewProduct = {
   name: '', shortDescription: '', description: '',
   category: 'Pure Honey', price: 0, originalPrice: 0,
   inStock: true, featured: false,
-  weightOptions: [{ label: '250g', price: 0, grams: 250 }],
+  weightOptions: [{ label: '250g', price: 0, originalPrice: 0, grams: 250 }],
   images: ['/images/300G MULTI.png'],
 };
 
 export default function AdminProductsPage() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [globalCategories, setGlobalCategories] = useState<string[]>([]);
+  const [globalWeights, setGlobalWeights] = useState<DbWeight[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<NewProduct>(BLANK);
@@ -50,6 +51,7 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     fetchCategories();
+    fetchWeights();
     fetchProducts();
   }, []);
 
@@ -60,6 +62,13 @@ export default function AdminProductsPage() {
     } catch (error) { console.error('Error fetching categories:', error); }
   };
 
+  const fetchWeights = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/weights');
+      if (res.ok) setGlobalWeights(await res.json());
+    } catch (error) { console.error('Error fetching weights:', error); }
+  };
+
   const fetchProducts = async () => {
     try {
       const res = await fetch('http://localhost:5000/api/products');
@@ -68,19 +77,34 @@ export default function AdminProductsPage() {
   };
 
   const openAdd = () => {
-    setForm({ ...BLANK, category: globalCategories[0] || 'Pure Honey' });
+    const defaultWeight = globalWeights[0] || { label: '250g', grams: 250, defaultPrice: 0 };
+    const initPrice = Number(defaultWeight.defaultPrice) || 0;
+    setForm({
+      ...BLANK,
+      category: globalCategories[0] || 'Pure Honey',
+      price: initPrice,
+      weightOptions: [{ label: defaultWeight.label, price: initPrice, originalPrice: 0, grams: defaultWeight.grams }],
+    });
     setFormErrors({});
     setEditing(null);
     setShowForm(true);
   };
 
   const openEdit = (p: Product) => {
+    const mappedWeights = (p.weightOptions || []).map((w, idx) => ({
+      ...w,
+      price: Number(w.price) || 0,
+      originalPrice: Number(w.originalPrice) || (idx === 0 ? Number(p.originalPrice) || 0 : 0),
+      grams: Number(w.grams) || 0,
+    }));
     setForm({
       name: p.name, shortDescription: p.shortDescription,
       description: p.description, category: p.category,
-      price: p.price, originalPrice: p.originalPrice || 0,
+      price: mappedWeights[0]?.price || p.price,
+      originalPrice: mappedWeights[0]?.originalPrice || p.originalPrice || 0,
       inStock: p.inStock,
-      featured: p.featured, weightOptions: [...p.weightOptions],
+      featured: p.featured,
+      weightOptions: mappedWeights.length > 0 ? mappedWeights : [{ label: '250g', price: p.price, originalPrice: p.originalPrice || 0, grams: 250 }],
       images: [...p.images],
     });
     setFormErrors({});
@@ -141,34 +165,86 @@ export default function AdminProductsPage() {
   };
 
   const addWeightOption = () => {
-    setForm(prev => ({
-      ...prev,
-      weightOptions: [...prev.weightOptions, { label: '500g', price: 0, grams: 500 }]
-    }));
+    setForm(prev => {
+      const usedLabels = new Set(prev.weightOptions.map(w => w.label));
+      const nextWeight =
+        globalWeights.find(w => !usedLabels.has(w.label)) ||
+        globalWeights[0] ||
+        { label: '500g', grams: 500, defaultPrice: 0 };
+      return {
+        ...prev,
+        weightOptions: [
+          ...prev.weightOptions,
+          {
+            label: nextWeight.label,
+            price: Number(nextWeight.defaultPrice) || 0,
+            originalPrice: 0,
+            grams: nextWeight.grams,
+          }
+        ]
+      };
+    });
   };
 
   const removeWeightOption = (i: number) => {
-    setForm(prev => ({
-      ...prev,
-      weightOptions: prev.weightOptions.filter((_, idx) => idx !== i)
-    }));
+    setForm(prev => {
+      const next = prev.weightOptions.filter((_, idx) => idx !== i);
+      return {
+        ...prev,
+        weightOptions: next,
+        price: i === 0 && next[0] ? Number(next[0].price) || 0 : prev.price,
+        originalPrice: i === 0 && next[0] ? Number(next[0].originalPrice) || 0 : prev.originalPrice,
+      };
+    });
   };
 
   const updateWeight = (i: number, field: keyof WeightOption, value: string | number) => {
-    setForm(prev => ({
-      ...prev,
-      weightOptions: prev.weightOptions.map((w, idx) => idx === i ? { ...w, [field]: value } : w)
-    }));
+    setForm(prev => {
+      const nextWeights = prev.weightOptions.map((w, idx) => {
+        if (idx !== i) return w;
+        if (field === 'label') {
+          const matched = globalWeights.find(gw => gw.label === value);
+          const nextPrice =
+            (!w.price || Number(w.price) === 0) && matched?.defaultPrice
+              ? Number(matched.defaultPrice)
+              : w.price;
+          return {
+            ...w,
+            label: String(value),
+            grams: matched ? matched.grams : w.grams,
+            price: nextPrice,
+          };
+        }
+        return { ...w, [field]: Number(value) };
+      });
+
+      const updatedFirst = nextWeights[0];
+      return {
+        ...prev,
+        weightOptions: nextWeights,
+        price: i === 0 && updatedFirst ? Number(updatedFirst.price) || 0 : prev.price,
+        originalPrice: i === 0 && field === 'originalPrice' && updatedFirst
+          ? Number(updatedFirst.originalPrice) || 0
+          : prev.originalPrice,
+      };
+    });
     if (formErrors.weightOptions) setFormErrors(p => ({ ...p, weightOptions: undefined }));
+    if (i === 0 && field === 'price' && formErrors.price) setFormErrors(p => ({ ...p, price: undefined }));
   };
 
   const validateForm = () => {
     const errs: FormErrors = {};
     if (!form.name.trim()) errs.name = 'Product name is required';
     if (!form.shortDescription.trim()) errs.shortDescription = 'Short description is required';
-    if (!form.price || Number(form.price) <= 0) errs.price = 'Enter a valid base price';
-    if (form.weightOptions.length === 0 || form.weightOptions.some(w => Number(w.price) <= 0)) {
-      errs.weightOptions = 'Each weight option must have a valid price';
+    const effectiveBasePrice = Number(form.price) || Number(form.weightOptions[0]?.price) || 0;
+    if (effectiveBasePrice <= 0) errs.price = 'Enter a valid base price';
+    if (form.weightOptions.length === 0 || form.weightOptions.some(w => !w.label || Number(w.price) <= 0)) {
+      errs.weightOptions = 'Each weight option must have a weight and a valid selling price';
+    } else {
+      const labels = form.weightOptions.map(w => w.label.trim().toLowerCase());
+      if (new Set(labels).size !== labels.length) {
+        errs.weightOptions = 'Each weight option must have a unique weight label';
+      }
     }
     if (!form.images[0]) errs.image = 'Product image is required';
     setFormErrors(errs);
@@ -182,14 +258,22 @@ export default function AdminProductsPage() {
       const url = editing ? `http://localhost:5000/api/products/${editing.id}` : 'http://localhost:5000/api/products';
       const method = editing ? 'PUT' : 'POST';
 
+      const cleanedWeights = form.weightOptions.map(w => {
+        const mrp = Number(w.originalPrice) || 0;
+        return {
+          label: w.label,
+          price: Number(w.price),
+          grams: Number(w.grams),
+          ...(mrp > 0 ? { originalPrice: mrp } : {}),
+        };
+      });
+
       const payload = {
         ...form,
         slug: form.name.toLowerCase().trim().replace(/\s+/g, '-'),
-        price: Number(form.price),
-        originalPrice: Number(form.originalPrice),
-        weightOptions: form.weightOptions.map(w => ({
-          ...w, price: Number(w.price), grams: Number(w.grams)
-        }))
+        price: Number(cleanedWeights[0]?.price ?? form.price),
+        originalPrice: Number(cleanedWeights[0]?.originalPrice ?? form.originalPrice) || 0,
+        weightOptions: cleanedWeights,
       };
 
       const res = await fetch(url, {
@@ -470,12 +554,21 @@ export default function AdminProductsPage() {
                     )}
                   </div>
                   <div>
-                    <label className="block text-[11px] text-stone-400 mb-1 font-semibold uppercase tracking-wider">Original Price (₹)</label>
+                    <label className="block text-[11px] text-stone-400 mb-1 font-semibold uppercase tracking-wider">Original Price / MRP (₹)</label>
                     <input
                       type="number"
                       onWheel={e => e.currentTarget.blur()}
                       value={form.originalPrice || ''}
-                      onChange={e => setForm(p => ({ ...p, originalPrice: Number(e.target.value) }))}
+                      onChange={e => {
+                        const newOrig = Number(e.target.value);
+                        setForm(p => {
+                          const newWeightOptions = [...p.weightOptions];
+                          if (newWeightOptions.length > 0) {
+                            newWeightOptions[0] = { ...newWeightOptions[0], originalPrice: newOrig };
+                          }
+                          return { ...p, originalPrice: newOrig, weightOptions: newWeightOptions };
+                        });
+                      }}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-xs sm:text-sm outline-none focus:border-amber-500/50 font-sans"
                       min={0}
                     />
@@ -485,46 +578,107 @@ export default function AdminProductsPage() {
                 {/* Weight Options */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-[11px] text-stone-400 font-semibold uppercase tracking-wider">Weight & Price Options *</label>
-                    <button type="button" onClick={addWeightOption} className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1">
-                      <Plus className="w-3.5 h-3.5" /> Add Option
-                    </button>
+                    <label className="text-[11px] text-stone-400 font-semibold uppercase tracking-wider">Weight &amp; Price Options *</label>
+                    <div className="flex items-center gap-3">
+                      <Link
+                        to="/admin/weights"
+                        className="text-[11px] font-medium text-stone-400 hover:text-amber-400 transition-colors"
+                      >
+                        Manage Weights
+                      </Link>
+                      <button type="button" onClick={addWeightOption} className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                        <Plus className="w-3.5 h-3.5" /> Add Option
+                      </button>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    {form.weightOptions.map((w, i) => (
-                      <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                        <select
-                          value={w.label}
-                          onChange={e => updateWeight(i, 'label', e.target.value)}
-                          className="col-span-5 px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs outline-none"
+
+                  {/* Column Headers (Desktop/Tablet) */}
+                  <div className="hidden sm:grid grid-cols-12 gap-2 px-1 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+                    <span className="col-span-4">Weight</span>
+                    <span className="col-span-3">Price (₹) *</span>
+                    <span className="col-span-2">MRP (₹)</span>
+                    <span className="col-span-2">Grams</span>
+                    <span className="col-span-1" />
+                  </div>
+
+                  <div className="space-y-2.5 sm:space-y-2">
+                    {form.weightOptions.map((w, i) => {
+                      const hasCurrentInDb = globalWeights.some(gw => gw.label === w.label);
+                      return (
+                        <div
+                          key={i}
+                          className="grid grid-cols-12 gap-2 items-center p-2.5 sm:p-0 rounded-2xl sm:rounded-none bg-white/[0.02] sm:bg-transparent border border-white/5 sm:border-0"
                         >
-                          {WEIGHT_LABELS.map(l => <option key={l} value={l} className="bg-[#0b1009]">{l}</option>)}
-                        </select>
-                        <input
-                          type="number"
-                          onWheel={e => e.currentTarget.blur()}
-                          placeholder="Price ₹"
-                          value={w.price || ''}
-                          onChange={e => updateWeight(i, 'price', e.target.value)}
-                          className="col-span-3 px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs outline-none font-sans"
-                          min={0}
-                        />
-                        <input
-                          type="number"
-                          onWheel={e => e.currentTarget.blur()}
-                          placeholder="Grams"
-                          value={w.grams || ''}
-                          onChange={e => updateWeight(i, 'grams', e.target.value)}
-                          className="col-span-3 px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs outline-none font-sans"
-                          min={0}
-                        />
-                        {form.weightOptions.length > 1 && (
-                          <button type="button" onClick={() => removeWeightOption(i)} className="col-span-1 flex justify-center text-red-400 hover:text-red-300">
-                            <X className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                          <div className="col-span-6 sm:col-span-4">
+                            <span className="sm:hidden block text-[9px] font-semibold uppercase tracking-wider text-stone-500 mb-1">Weight</span>
+                            <select
+                              value={w.label}
+                              onChange={e => updateWeight(i, 'label', e.target.value)}
+                              className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs outline-none focus:border-amber-500/50"
+                            >
+                              {!hasCurrentInDb && w.label && (
+                                <option value={w.label} className="bg-[#0b1009]">{w.label}</option>
+                              )}
+                              {globalWeights.map(gw => (
+                                <option key={gw.id} value={gw.label} className="bg-[#0b1009]">{gw.label}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="col-span-6 sm:col-span-3">
+                            <span className="sm:hidden block text-[9px] font-semibold uppercase tracking-wider text-stone-500 mb-1">Price (₹) *</span>
+                            <input
+                              type="number"
+                              onWheel={e => e.currentTarget.blur()}
+                              placeholder="Price ₹"
+                              value={w.price || ''}
+                              onChange={e => updateWeight(i, 'price', e.target.value)}
+                              className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 focus:border-amber-500/50 text-white text-xs outline-none font-sans"
+                              min={0}
+                            />
+                          </div>
+
+                          <div className="col-span-5 sm:col-span-2">
+                            <span className="sm:hidden block text-[9px] font-semibold uppercase tracking-wider text-stone-500 mb-1">MRP (₹)</span>
+                            <input
+                              type="number"
+                              onWheel={e => e.currentTarget.blur()}
+                              placeholder="MRP ₹"
+                              value={w.originalPrice || ''}
+                              onChange={e => updateWeight(i, 'originalPrice', e.target.value)}
+                              className="w-full px-2.5 py-2 rounded-xl bg-black/40 border border-white/10 focus:border-amber-500/50 text-white text-xs outline-none font-sans"
+                              min={0}
+                            />
+                          </div>
+
+                          <div className="col-span-5 sm:col-span-2">
+                            <span className="sm:hidden block text-[9px] font-semibold uppercase tracking-wider text-stone-500 mb-1">Grams</span>
+                            <input
+                              type="number"
+                              onWheel={e => e.currentTarget.blur()}
+                              placeholder="Grams"
+                              value={w.grams || ''}
+                              onChange={e => updateWeight(i, 'grams', e.target.value)}
+                              className="w-full px-2.5 py-2 rounded-xl bg-black/40 border border-white/10 focus:border-amber-500/50 text-white text-xs outline-none font-sans"
+                              min={0}
+                            />
+                          </div>
+
+                          <div className="col-span-2 sm:col-span-1 flex justify-end sm:justify-center pt-4 sm:pt-0">
+                            {form.weightOptions.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeWeightOption(i)}
+                                className="p-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                                title="Remove option"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                   {formErrors.weightOptions && (
                     <p className="mt-1 flex items-center gap-1 text-[11px] text-red-400">

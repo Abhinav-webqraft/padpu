@@ -114,7 +114,7 @@ router.post('/signin', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    const role = user.email === 'admin@padpu.com' ? 'admin' : user.role;
+    const role = (user.email === 'admin@padpu.com' ? 'admin' : (user.role || 'user')).toLowerCase();
     const token = generateToken({ id: user.id, role });
 
     res.json({
@@ -179,7 +179,7 @@ router.post('/google', async (req, res) => {
     if (providers.length > 0) {
       // SCENARIO B: Existing Google user logging in again
       const user = providers[0];
-      const role = user.email === 'admin@padpu.com' ? 'admin' : user.role;
+      const role = (user.email === 'admin@padpu.com' ? 'admin' : (user.role || 'user')).toLowerCase();
 
       // Update avatar if not set
       if (!user.avatar && picture) {
@@ -355,7 +355,7 @@ router.post('/google/link', async (req, res) => {
       await connection.query('UPDATE users SET avatar = ? WHERE id = ?', [picture, user.id]);
     }
 
-    const role = user.email === 'admin@padpu.com' ? 'admin' : user.role;
+    const role = (user.email === 'admin@padpu.com' ? 'admin' : (user.role || 'user')).toLowerCase();
     const token = generateToken({ id: user.id, role });
 
     return res.json({

@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin, Instagram, Facebook, Youtube } from "lucide-react";
+import { DEFAULT_STORE_SETTINGS, formatPhoneDisplay } from "../../utils/formatters";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const [settings, setSettings] = useState({
-    phone: '+91 98765 43210',
-    email: 'hello@padpufarms.com',
-    address: 'Dakshina Kannada, Karnataka'
+    phone: DEFAULT_STORE_SETTINGS.phone,
+    email: DEFAULT_STORE_SETTINGS.email,
+    address: DEFAULT_STORE_SETTINGS.address
   });
 
   useEffect(() => {
@@ -16,9 +17,9 @@ export default function Footer() {
       .then(data => {
         if (data.success && data.data) {
           setSettings({
-            phone: data.data.phone || '+91 98765 43210',
-            email: data.data.email || 'hello@padpufarms.com',
-            address: data.data.address || 'Dakshina Kannada, Karnataka'
+            phone: data.data.phone || DEFAULT_STORE_SETTINGS.phone,
+            email: data.data.email || DEFAULT_STORE_SETTINGS.email,
+            address: data.data.address || DEFAULT_STORE_SETTINGS.address
           });
         }
       })
@@ -65,7 +66,7 @@ export default function Footer() {
             <div className="space-y-2.5 text-stone-400 text-xs">
               <div className="flex gap-2.5 items-center">
                 <Phone className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <a href={`tel:${settings.phone.replace(/\D/g, '')}`} className="hover:text-amber-400 transition-colors">{settings.phone}</a>
+                <a href={`tel:${formatPhoneDisplay(settings.phone).replace(/\s+/g, '')}`} className="hover:text-amber-400 transition-colors">{formatPhoneDisplay(settings.phone)}</a>
               </div>
               <div className="flex gap-2.5 items-center">
                 <Mail className="w-3.5 h-3.5 text-amber-400 shrink-0" />

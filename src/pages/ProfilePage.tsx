@@ -34,7 +34,8 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { logout, role, user, updateProfile } = useAuth();
+  const { logout, role, token, user, updateProfile } = useAuth();
+  const isAdmin = Boolean(token && role === 'admin' && (!user || user.role === 'admin'));
   const { orders, loading: loadingOrders } = useOrders();
   const { wishlistItems } = useWishlist();
 
@@ -166,7 +167,7 @@ export default function ProfilePage() {
             <div>
               <div className="flex items-center justify-center sm:justify-start gap-2.5">
                 <h1 className="font-display font-bold text-2xl sm:text-3xl text-white">{userName}</h1>
-                {role === 'admin' && (
+                {isAdmin && (
                   <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 font-bold uppercase tracking-wider bg-amber-500/15 border border-amber-500/30 rounded-full px-2.5 py-0.5">
                     <Shield className="w-3 h-3" /> Admin
                   </span>
@@ -201,7 +202,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            {role === 'admin' && (
+            {isAdmin && (
               <Link
                 to="/admin"
                 className="px-4 py-2.5 rounded-xl text-xs font-semibold text-stone-950 amber-gradient hover:opacity-90 transition-all"

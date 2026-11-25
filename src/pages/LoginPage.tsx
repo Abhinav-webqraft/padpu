@@ -15,6 +15,7 @@ export default function LoginPage() {
   const { login, googleAuth, linkGoogleAccount } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const redirectTo = (location.state as { from?: string } | null)?.from || '/';
 
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -64,7 +65,7 @@ export default function LoginPage() {
         if (userRole === 'admin') {
           navigate('/admin');
         } else {
-          navigate('/');
+          navigate(redirectTo, { replace: true });
         }
       }
     } catch (err: any) {
@@ -79,7 +80,7 @@ export default function LoginPage() {
     if (role === 'admin') {
       navigate('/admin');
     } else {
-      navigate('/');
+      navigate(redirectTo, { replace: true });
     }
   };
 
@@ -88,7 +89,7 @@ export default function LoginPage() {
     if (postAuthRole === 'admin') {
       navigate('/admin');
     } else {
-      navigate('/');
+      navigate(redirectTo, { replace: true });
     }
   };
 
@@ -127,7 +128,7 @@ export default function LoginPage() {
       if (userRole === 'admin') {
         navigate('/admin');
       } else {
-        navigate('/');
+        navigate(redirectTo, { replace: true });
       }
     } catch (err: any) {
       setError(err.message || 'Invalid email/phone or password');
@@ -245,7 +246,11 @@ export default function LoginPage() {
 
         <p className="text-center text-xs text-stone-400 mt-6 font-light">
           Don't have an account?{' '}
-          <Link to="/signup" className="text-amber-400 hover:text-amber-300 font-semibold transition-colors">
+          <Link
+            to="/signup"
+            state={{ from: redirectTo }}
+            className="text-amber-400 hover:text-amber-300 font-semibold transition-colors"
+          >
             Create one
           </Link>
         </p>

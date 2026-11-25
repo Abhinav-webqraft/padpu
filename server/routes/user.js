@@ -16,7 +16,11 @@ router.get('/profile', verifyToken, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json(users[0]);
+    const user = {
+      ...users[0],
+      role: (users[0].email === 'admin@padpu.com' ? 'admin' : (users[0].role || 'user')).toLowerCase(),
+    };
+    res.json(user);
   } catch (error) {
     console.error('Error fetching profile:', error);
     res.status(500).json({ message: 'Server error' });
@@ -82,7 +86,11 @@ router.put('/profile', verifyToken, async (req, res) => {
       'SELECT id, name, email, phonenumber, location, avatar, role, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
-    res.json(updatedUsers[0]);
+    const updatedUser = {
+      ...updatedUsers[0],
+      role: (updatedUsers[0].email === 'admin@padpu.com' ? 'admin' : (updatedUsers[0].role || 'user')).toLowerCase(),
+    };
+    res.json(updatedUser);
   } catch (error) {
     console.error('Error updating profile:', error);
     res.status(500).json({ message: 'Server error' });

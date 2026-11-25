@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { resetHeroSession } from '../utils/heroSession';
 
 type Role = 'admin' | 'user' | null;
 
@@ -37,34 +38,48 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const normalizeRole = (r: unknown): Role => {
+  if (typeof r !== 'string') return null;
+  const lower = r.trim().toLowerCase();
+  return lower === 'admin' || lower === 'user' ? (lower as Role) : null;
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-  const [role, setRole] = useState<Role>(localStorage.getItem('userRole') as Role);
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
+  const [role, setRole] = useState<Role>(() =>
+    localStorage.getItem('token') ? normalizeRole(localStorage.getItem('userRole')) : null
+  );
   const [user, setUser] = useState<UserProfile | null>(null);
   const HERO_INTRO_SEEN_KEY = 'padpuHeroIntroSeen';
 
   // Fetch profile when token changes
   useEffect(() => {
-    if (token) {
-      fetch('http://localhost:5000/api/user/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch profile');
-        return res.json();
-      })
-      .then(data => {
-        setUser(data);
-        setRole(data.role);
-        localStorage.setItem('userRole', data.role);
-      })
-      .catch(err => {
-        console.error(err);
-        logout();
-      });
+    if (!token) {
+      setRole(null);
+      setUser(null);
+      localStorage.removeItem('userRole');
+      return;
     }
+
+    fetch('http://localhost:5000/api/user/profile', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to fetch profile');
+      return res.json();
+    })
+    .then(data => {
+      const cleanRole = normalizeRole(data.role) || 'user';
+      setUser({ ...data, role: cleanRole });
+      setRole(cleanRole);
+      localStorage.setItem('userRole', cleanRole);
+    })
+    .catch(err => {
+      console.error(err);
+      logout();
+    });
   }, [token]);
 
   const login = async (identifier: string, password: string) => {
@@ -76,12 +91,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Login failed');
 
+    const cleanRole = normalizeRole(data.role) || 'user';
     setToken(data.token);
-    setRole(data.role);
-    if (data.user) setUser(data.user);
+    setRole(cleanRole);
+    if (data.user) setUser({ ...data.user, role: cleanRole });
     localStorage.setItem('token', data.token);
-    localStorage.setItem('userRole', data.role);
-    return data.role;
+    localStorage.setItem('userRole', cleanRole);
+    resetHeroSession();
+    return cleanRole;
   };
 
   const googleAuth = async (credential: string): Promise<GoogleAuthResult> => {
@@ -102,15 +119,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       };
     }
 
+    const cleanRole = normalizeRole(data.role) || 'user';
     setToken(data.token);
-    setRole(data.role);
-    if (data.user) setUser(data.user);
+    setRole(cleanRole);
+    if (data.user) setUser({ ...data.user, role: cleanRole });
     localStorage.setItem('token', data.token);
-    localStorage.setItem('userRole', data.role);
+    localStorage.setItem('userRole', cleanRole);
+    resetHeroSession();
 
     return {
       requiresPhone: data.requiresPhone,
-      role: data.role,
+      role: cleanRole,
       email: data.user?.email,
       name: data.user?.name
     };
@@ -125,20 +144,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Account linking failed');
 
+    const cleanRole = normalizeRole(data.role) || 'user';
     setToken(data.token);
-    setRole(data.role);
-    if (data.user) setUser(data.user);
+    setRole(cleanRole);
+    if (data.user) setUser({ ...data.user, role: cleanRole });
     localStorage.setItem('token', data.token);
-    localStorage.setItem('userRole', data.role);
-    return data.role;
+    localStorage.setItem('userRole', cleanRole);
+    resetHeroSession();
+    return cleanRole;
   };
 
   const loginWithToken = (newToken: string, newRole: Role = 'user', newUser?: UserProfile) => {
+    const cleanRole = normalizeRole(newRole) || 'user';
     setToken(newToken);
-    setRole(newRole);
-    if (newUser) setUser(newUser);
+    setRole(cleanRole);
+    if (newUser) setUser({ ...newUser, role: cleanRole });
     localStorage.setItem('token', newToken);
-    if (newRole) localStorage.setItem('userRole', newRole);
+    if (cleanRole) localStorage.setItem('userRole', cleanRole);
+    resetHeroSession();
   };
 
   const register = async (name: string, phonenumber: string, email: string, password: string) => {
@@ -173,6 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
     sessionStorage.removeItem(HERO_INTRO_SEEN_KEY);
+    resetHeroSession();
   };
 
   return (

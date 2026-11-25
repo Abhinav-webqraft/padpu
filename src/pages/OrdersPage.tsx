@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOrders } from '../context/OrderContext';
+import { useAuth } from '../context/AuthContext';
+import { DEFAULT_STORE_SETTINGS, formatWhatsAppNumber } from '../utils/formatters';
 import {
   Package,
   MapPin,
@@ -26,8 +28,21 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 
 export default function OrdersPage() {
   const { orders, loading } = useOrders();
+  const { role } = useAuth();
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'delivered'>('all');
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
+  const [waPhone, setWaPhone] = useState(() => formatWhatsAppNumber(DEFAULT_STORE_SETTINGS.phone));
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/admin/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data?.phone) {
+          setWaPhone(formatWhatsAppNumber(data.data.phone));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const toggleExpand = (id: string) => {
     setExpandedOrders(prev => ({ ...prev, [id]: !prev[id] }));
@@ -87,7 +102,7 @@ export default function OrdersPage() {
             )}
 
             <a
-              href="https://wa.me/919876543210?text=Hi%2C%20I%20have%20a%20question%20about%20my%20Padpu%20Farms%20orders"
+              href={`https://wa.me/${waPhone}?text=Hi%2C%20I%20have%20a%20question%20about%20my%20Padpu%20Farms%20orders`}
               target="_blank"
               rel="noopener noreferrer"
               className="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all"
@@ -115,14 +130,27 @@ export default function OrdersPage() {
             </div>
             <h2 className="text-xl font-display font-bold text-white mb-1">No orders yet</h2>
             <p className="text-stone-400 text-xs mb-6 font-light">
-              Explore our cold-extracted honey from the Western Ghats.
+              {role
+                ? 'Explore our cold-extracted honey from the Western Ghats.'
+                : 'Browse our pure honey or sign in if you have existing orders.'}
             </p>
-            <Link
-              to="/shop"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl amber-gradient text-stone-950 text-xs font-bold"
-            >
-              Browse Shop
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              <Link
+                to="/shop"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl amber-gradient text-stone-950 text-xs font-bold"
+              >
+                Browse Shop
+              </Link>
+              {!role && (
+                <Link
+                  to="/login"
+                  state={{ from: '/orders' }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-xs font-semibold transition-colors"
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
           </motion.div>
         ) : filteredOrders.length === 0 ? (
           <div className="p-10 rounded-3xl bg-white/[0.04] border border-white/10 text-center max-w-md mx-auto">

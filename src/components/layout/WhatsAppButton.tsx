@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, useMotionValue, animate } from 'framer-motion';
+import { DEFAULT_STORE_SETTINGS, formatWhatsAppNumber } from '../../utils/formatters';
 
 const BUTTON_SIZE = 48;
 const SWIPE_THRESHOLD = 35;
 
 export default function WhatsAppButton() {
-  const [phone, setPhone] = useState('919876543210');
+  const [phone, setPhone] = useState(() => formatWhatsAppNumber(DEFAULT_STORE_SETTINGS.phone));
   const [side, setSide] = useState<'left' | 'right'>('right');
   const [ready, setReady] = useState(false);
 
@@ -44,12 +45,7 @@ export default function WhatsAppButton() {
         const response = await fetch('http://localhost:5000/api/admin/settings');
         const data = await response.json();
         if (data.success && data.data && data.data.phone) {
-          const digits = data.data.phone.replace(/\D/g, '');
-          if (digits.length === 10) {
-            setPhone(`91${digits}`);
-          } else if (digits.length > 0) {
-            setPhone(digits);
-          }
+          setPhone(formatWhatsAppNumber(data.data.phone));
         }
       } catch (error) {
         console.error('Failed to fetch settings for WhatsApp:', error);

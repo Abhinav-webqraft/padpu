@@ -24,6 +24,7 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'));
 const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'));
 const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
+const AdminWeightsPage = lazy(() => import('./pages/admin/AdminWeightsPage'));
 const AdminGalleryPage = lazy(() => import('./pages/admin/AdminGalleryPage'));
 const AdminMessagesPage = lazy(() => import('./pages/admin/AdminMessagesPage'));
 const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettings'));
@@ -60,8 +61,8 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => (
 );
 
 const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { role } = useAuth();
-  if (role !== 'admin') {
+  const { role, token } = useAuth();
+  if (!token || role !== 'admin') {
     return <Navigate to="/login" replace />;
   }
   return <AdminLayout>{children}</AdminLayout>;
@@ -69,8 +70,18 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 const ProtectedUserRoute = ({ children }: { children: React.ReactNode }) => {
   const { role } = useAuth();
+  const location = useLocation();
   if (!role) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{
+          from: location.pathname,
+          message: location.pathname === '/checkout' ? 'Please sign in to proceed to checkout.' : undefined,
+        }}
+      />
+    );
   }
   return <PublicLayout>{children}</PublicLayout>;
 };
@@ -96,18 +107,19 @@ function App() {
                   <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
                   <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
                   <Route path="/gallery" element={<PublicLayout><GalleryPage /></PublicLayout>} />
+                  <Route path="/orders" element={<PublicLayout><OrdersPage /></PublicLayout>} />
+                  <Route path="/wishlist" element={<PublicLayout><WishlistPage /></PublicLayout>} />
 
                   {/* User Routes (Protected) */}
                   <Route path="/checkout" element={<ProtectedUserRoute><CheckoutPage /></ProtectedUserRoute>} />
                   <Route path="/profile" element={<ProtectedUserRoute><ProfilePage /></ProtectedUserRoute>} />
-                  <Route path="/orders" element={<ProtectedUserRoute><OrdersPage /></ProtectedUserRoute>} />
-                  <Route path="/wishlist" element={<ProtectedUserRoute><WishlistPage /></ProtectedUserRoute>} />
 
                   {/* Admin Routes */}
                   <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
                   <Route path="/admin/orders" element={<ProtectedAdminRoute><AdminOrdersPage /></ProtectedAdminRoute>} />
                   <Route path="/admin/products" element={<ProtectedAdminRoute><AdminProductsPage /></ProtectedAdminRoute>} />
                   <Route path="/admin/categories" element={<ProtectedAdminRoute><AdminCategoriesPage /></ProtectedAdminRoute>} />
+                  <Route path="/admin/weights" element={<ProtectedAdminRoute><AdminWeightsPage /></ProtectedAdminRoute>} />
                   <Route path="/admin/gallery" element={<ProtectedAdminRoute><AdminGalleryPage /></ProtectedAdminRoute>} />
                   <Route path="/admin/messages" element={<ProtectedAdminRoute><AdminMessagesPage /></ProtectedAdminRoute>} />
                   <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettingsPage /></ProtectedAdminRoute>} />

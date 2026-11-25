@@ -70,6 +70,111 @@ app.delete('/api/categories/:name', async (req, res) => {
   }
 });
 
+// Weights Routes
+const formatWeightRow = (row) => ({
+  id: row.id,
+  label: row.label,
+  grams: Number(row.grams || 0),
+  defaultPrice: Number(row.default_price || 0),
+  created_at: row.created_at,
+});
+
+app.get('/api/weights', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT id, label, grams, default_price, created_at FROM weights ORDER BY grams ASC, created_at ASC'
+    );
+    res.json(rows.map(formatWeightRow));
+  } catch (error) {
+    console.error('Error fetching weights:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/api/weights', async (req, res) => {
+  try {
+    const label = typeof req.body.label === 'string' ? req.body.label.trim() : '';
+    const grams = Number(req.body.grams) || 0;
+    const defaultPrice = req.body.defaultPrice !== undefined && req.body.defaultPrice !== ''
+      ? Number(req.body.defaultPrice)
+      : 0;
+    if (!label) return res.status(400).json({ message: 'Weight label is required' });
+    if (grams < 0 || !Number.isFinite(grams)) {
+      return res.status(400).json({ message: 'Grams must be a valid positive number' });
+    }
+    if (defaultPrice < 0 || !Number.isFinite(defaultPrice)) {
+      return res.status(400).json({ message: 'Default price must be a valid non-negative number' });
+    }
+
+    const [result] = await pool.query(
+      'INSERT INTO weights (label, grams, default_price) VALUES (?, ?, ?)',
+      [label, Math.round(grams), Number(defaultPrice.toFixed(2))]
+    );
+    const [rows] = await pool.query(
+      'SELECT id, label, grams, default_price, created_at FROM weights WHERE id = ?',
+      [result.insertId]
+    );
+    res.status(201).json(formatWeightRow(rows[0]));
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'This weight option already exists' });
+    }
+    console.error('Error adding weight:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.put('/api/weights/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const label = typeof req.body.label === 'string' ? req.body.label.trim() : '';
+    const grams = Number(req.body.grams) || 0;
+    const defaultPrice = req.body.defaultPrice !== undefined && req.body.defaultPrice !== ''
+      ? Number(req.body.defaultPrice)
+      : 0;
+    if (!label) return res.status(400).json({ message: 'Weight label is required' });
+    if (grams < 0 || !Number.isFinite(grams)) {
+      return res.status(400).json({ message: 'Grams must be a valid positive number' });
+    }
+    if (defaultPrice < 0 || !Number.isFinite(defaultPrice)) {
+      return res.status(400).json({ message: 'Default price must be a valid non-negative number' });
+    }
+
+    const [result] = await pool.query(
+      'UPDATE weights SET label = ?, grams = ?, default_price = ? WHERE id = ?',
+      [label, Math.round(grams), Number(defaultPrice.toFixed(2)), id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Weight option not found' });
+    }
+    const [rows] = await pool.query(
+      'SELECT id, label, grams, default_price, created_at FROM weights WHERE id = ?',
+      [id]
+    );
+    res.json(formatWeightRow(rows[0]));
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'This weight option already exists' });
+    }
+    console.error('Error updating weight:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.delete('/api/weights/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await pool.query('DELETE FROM weights WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Weight option not found' });
+    }
+    res.json({ message: 'Weight deleted' });
+  } catch (error) {
+    console.error('Error deleting weight:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Gallery Routes
 app.get('/api/gallery', async (req, res) => {
   try {

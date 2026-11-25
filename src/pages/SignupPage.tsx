@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock, Mail, ArrowRight, User, Phone, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -27,6 +27,8 @@ export default function SignupPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { register, googleAuth, linkGoogleAccount } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = (location.state as { from?: string } | null)?.from || '/';
 
   // Account Linking Modal state
   const [linkingState, setLinkingState] = useState<{
@@ -71,7 +73,7 @@ export default function SignupPage() {
         if (userRole === 'admin') {
           navigate('/admin');
         } else {
-          navigate('/');
+          navigate(redirectTo, { replace: true });
         }
       }
     } catch (err: any) {
@@ -86,7 +88,7 @@ export default function SignupPage() {
     if (role === 'admin') {
       navigate('/admin');
     } else {
-      navigate('/');
+      navigate(redirectTo, { replace: true });
     }
   };
 
@@ -95,7 +97,7 @@ export default function SignupPage() {
     if (postAuthRole === 'admin') {
       navigate('/admin');
     } else {
-      navigate('/');
+      navigate(redirectTo, { replace: true });
     }
   };
 
@@ -142,7 +144,7 @@ export default function SignupPage() {
     setIsLoading(true);
     try {
       await register(name.trim(), phonenumber, email.trim(), password);
-      navigate('/login', { state: { message: 'Account created! Please sign in.' } });
+      navigate('/login', { state: { message: 'Account created! Please sign in.', from: redirectTo } });
     } catch (err: any) {
       setError(err.message || 'Signup failed. Please try again.');
     } finally {

@@ -3,6 +3,7 @@ import { X, Minus, Plus, ShoppingBag, Trash2, ArrowRight, Package } from "lucide
 import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useOrders } from "../../context/OrderContext";
+import { useAuth } from "../../context/AuthContext";
 import { formatWeightLabel } from "../../utils/formatters";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -17,6 +18,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQuantity, subtotal, itemCount } = useCart();
   const { orders, orderCount, loading: ordersLoading } = useOrders();
+  const { role } = useAuth();
   const [activeTab, setActiveTab] = useState<'cart' | 'orders'>('cart');
 
   const TAX_RATE = 0.06;
@@ -172,11 +174,12 @@ export default function CartDrawer() {
                 </div>
 
                 <Link
-                  to="/checkout"
+                  to={role ? "/checkout" : "/login"}
+                  state={role ? undefined : { from: '/checkout', message: 'Please sign in to proceed to checkout.' }}
                   onClick={closeCart}
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-xl amber-gradient text-stone-950 font-bold text-xs hover:shadow-[0_0_20px_rgba(245,158,11,0.35)] transition-all"
                 >
-                  Checkout <ArrowRight className="w-4 h-4" />
+                  Proceed to Checkout <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             )}
@@ -196,6 +199,16 @@ export default function CartDrawer() {
                   <Package className="w-7 h-7" />
                 </div>
                 <p className="text-white font-semibold text-sm">No orders yet</p>
+                {!role && (
+                  <Link
+                    to="/login"
+                    state={{ from: '/orders' }}
+                    onClick={closeCart}
+                    className="text-xs text-amber-400 hover:text-amber-300 font-semibold"
+                  >
+                    Sign in to view past orders
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="space-y-3 flex-1">

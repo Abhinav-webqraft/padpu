@@ -1,10 +1,26 @@
-import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState, useRef } from 'react';
 import { CartItem, Product, WeightOption } from '../types';
 import { useAuth } from './AuthContext';
 
-interface CartState {
-  items: CartItem[];
-  isOpen: boolean;
+const GUEST_CART_KEY = 'padpu-guest-cart';
+
+function readGuestCart(): CartItem[] {
+  try {
+    const raw = localStorage.getItem(GUEST_CART_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeGuestCart(items: CartItem[]) {
+  try {
+    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+  } catch {
+    // ignore storage quota errors
+  }
 }
 
 interface CartContextType {
@@ -74,27 +90,75 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
-  const [items, dispatch] = useReducer(cartReducer, []);
+  const [items, dispatch] = useReducer(cartReducer, [], () => (token ? [] : readGuestCart()));
   const [isOpen, setIsOpen] = useState(false);
+  const prevTokenRef = useRef<string | null>(token);
 
+  // Sync guest cart to server upon login, or load/persist guest cart when logged out
   useEffect(() => {
+    const prevToken = prevTokenRef.current;
+    prevTokenRef.current = token;
+
     if (token) {
-      fetch('http://localhost:5000/api/cart', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch cart');
-        return res.json();
-      })
-      .then(data => dispatch({ type: 'LOAD_CART', payload: Array.isArray(data) ? data : [] }))
-      .catch(console.error);
-    } else {
+      const syncAndLoad = async () => {
+        try {
+          const guestItems = readGuestCart();
+          if (guestItems.length > 0) {
+            await Promise.all(
+              guestItems.map(item =>
+                fetch('http://localhost:5000/api/cart', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({
+                    productId: item.productId,
+                    weightLabel: item.selectedWeight.label,
+                    weightGrams: item.selectedWeight.grams,
+                    quantity: item.quantity,
+                  }),
+                }).catch(() => {})
+              )
+            );
+            localStorage.removeItem(GUEST_CART_KEY);
+          }
+
+          const res = await fetch('http://localhost:5000/api/cart', {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (!res.ok) throw new Error('Failed to fetch cart');
+          const data = await res.json();
+          dispatch({ type: 'LOAD_CART', payload: Array.isArray(data) ? data : [] });
+        } catch (err) {
+          console.error(err);
+        }
+      };
+
+      syncAndLoad();
+    } else if (prevToken) {
+      // User explicitly logged out -> clear cart state
+      localStorage.removeItem(GUEST_CART_KEY);
       dispatch({ type: 'CLEAR_CART' });
+    } else {
+      // Guest browsing -> load saved local cart
+      dispatch({ type: 'LOAD_CART', payload: readGuestCart() });
     }
   }, [token]);
 
+  // Persist guest cart changes to localStorage when not logged in
+  useEffect(() => {
+    if (!token) {
+      writeGuestCart(items);
+    }
+  }, [items, token]);
+
   const addItem = async (product: Product, weight: WeightOption, quantity = 1) => {
-    if (!token) return alert('Please login to add items to cart');
+    if (!token) {
+      dispatch({ type: 'ADD_ITEM', payload: { product, weight, quantity } });
+      setIsOpen(true);
+      return;
+    }
     try {
       const res = await fetch('http://localhost:5000/api/cart', {
         method: 'POST',
@@ -111,7 +175,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeItem = async (productId: string, weightLabel: string, weightGrams: number) => {
-    if (!token) return;
+    if (!token) {
+      dispatch({ type: 'REMOVE_ITEM', payload: { productId, weightLabel, weightGrams } });
+      return;
+    }
     try {
       const res = await fetch('http://localhost:5000/api/cart/item', {
         method: 'DELETE',
@@ -127,7 +194,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateQuantity = async (productId: string, weightLabel: string, weightGrams: number, quantity: number) => {
-    if (!token) return;
+    if (!token) {
+      dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, weightLabel, weightGrams, quantity } });
+      return;
+    }
     try {
       const res = await fetch('http://localhost:5000/api/cart', {
         method: 'PUT',
@@ -143,7 +213,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearCart = async () => {
-    if (!token) return;
+    if (!token) {
+      localStorage.removeItem(GUEST_CART_KEY);
+      dispatch({ type: 'CLEAR_CART' });
+      return;
+    }
     try {
       const res = await fetch('http://localhost:5000/api/cart', {
         method: 'DELETE',
@@ -156,6 +230,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error(err);
     }
   };
+
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
   const toggleCart = () => setIsOpen(prev => !prev);
